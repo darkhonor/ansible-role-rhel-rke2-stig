@@ -41,11 +41,15 @@
 
 ###############################################################################
 # Sysctl Handlers - Kernel Parameter Tuning
+# Note: sysctl --system may fail in containers where kernel parameters cannot
+#   be modified. Config files are deployed regardless; settings apply on reboot
+#   or when running on real hardware/VMs.
 ###############################################################################
 - name: Reload sysctl
   ansible.builtin.command:
     cmd: sysctl --system
   changed_when: true
+  failed_when: false
   listen: Reload sysctl
 
 ###############################################################################
