@@ -25,8 +25,8 @@ platforms:
     # cgroups v2 compatibility for GitHub Actions runners
     cgroupns_mode: host
     tmpfs:
-      - /run
-      - /tmp
+      /run: rw,noexec,nosuid,size=65536k
+      /tmp: rw,noexec,nosuid
     capabilities:
       - SYS_ADMIN
       - AUDIT_WRITE
