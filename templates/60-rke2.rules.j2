@@ -1,0 +1,62 @@
+{{ ansible_managed | comment }}
+################################################################################
+# Supplemental fapolicyd Rules for RKE2 Environments
+# File: /etc/fapolicyd/rules.d/60-rke2.rules
+#
+# Purpose: Supplement the RKE2 RPM-provided rules (80-rke2.rules) with
+#          additional paths for persistent storage and optional components.
+#
+# STIG References:
+#   - V-270180 (RHEL-09-433016): The RHEL 9 fapolicy module must be configured
+#     to employ a deny-all, permit-by-exception policy to allow the execution
+#     of authorized software programs.
+#
+# Priority: 60 (executes before RKE2 RPM rules at 80)
+#
+# Note: The RKE2 RPM (rke2-common) provides /etc/fapolicyd/rules.d/80-rke2.rules
+#       which covers core paths:
+#         - /var/lib/rancher/
+#         - /opt/cni/
+#         - /run/k3s/
+#         - /var/lib/kubelet/
+#
+#       This file only adds rules for paths NOT covered by the RPM or that
+#       require explicit allowance for operational assurance.
+################################################################################
+
+#------------------------------------------------------------------------------
+# Helm (if installed outside RKE2's bundled version)
+#------------------------------------------------------------------------------
+
+# Helm binary installed to /usr/local/bin (common manual install location)
+allow perm=execute all : path=/usr/local/bin/helm
+
+#------------------------------------------------------------------------------
+# Persistent Storage - Longhorn CSI
+#
+# While /var/lib/rancher/ is covered by the RPM rules, Longhorn storage paths
+# are explicitly listed here for operational assurance and to support custom
+# storage configurations.
+#------------------------------------------------------------------------------
+
+# Longhorn primary storage path (configurable via Ansible variable)
+allow perm=any all : dir={{ rhel_rke2_stig_longhorn_storage_path }}/
+
+# Longhorn backing images and replicas (standard Longhorn paths)
+allow perm=any all : dir=/var/lib/rancher/longhorn/replicas/
+allow perm=any all : dir=/var/lib/rancher/longhorn/backingimages/
+allow perm=any all : dir=/var/lib/rancher/longhorn/engine-binaries/
+
+#------------------------------------------------------------------------------
+# Persistent Storage - Local Path Provisioner
+#
+# Explicitly allow execution from local-path-provisioner volumes for workloads
+# that need to run binaries from persistent storage.
+#------------------------------------------------------------------------------
+
+# Local path provisioner storage (configurable via Ansible variable)
+allow perm=any all : dir={{ rhel_rke2_stig_local_path_storage_path }}/
+
+################################################################################
+# END OF SUPPLEMENTAL RKE2 RULES
+################################################################################

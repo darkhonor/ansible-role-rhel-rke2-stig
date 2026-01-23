@@ -1,0 +1,31 @@
+---
+###############################################################################
+# Filename: defaults/main.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Default variables for RHEL RKE2 STIG compliance role. These can be
+#   overridden in playbooks or inventory to customize behavior.
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+
+###############################################################################
+# fapolicyd Configuration - Application Whitelisting (RHEL-09-433016)
+# Note: These rules SUPPLEMENT the RKE2 RPM-provided rules (80-rke2.rules).
+#   The RPM covers /var/lib/rancher/, /opt/cni/, /run/k3s/, /var/lib/kubelet/.
+#   This role adds explicit rules for Longhorn/local-path storage paths and
+#   optional components like Helm.
+###############################################################################
+# Enable/disable supplemental fapolicyd rules deployment
+rhel_rke2_stig_fapolicyd_enabled: true
+
+# Longhorn CSI storage path - where Longhorn stores volume data
+# Default: /var/lib/rancher/longhorn
+# WARNING: Allowing execution from persistent volumes is a security tradeoff.
+#   Only enable if workloads genuinely need to execute binaries from PVs.
+rhel_rke2_stig_longhorn_storage_path: /var/lib/rancher/longhorn
+
+# Local Path Provisioner storage path - where local-path-provisioner stores PVs
+# Default: /var/lib/rancher/local-path-provisioner
+# WARNING: Allowing execution from local PVs is a security tradeoff.
+#   Only enable if workloads genuinely need to execute binaries from PVs.
+rhel_rke2_stig_local_path_storage_path: /var/lib/rancher/local-path-provisioner

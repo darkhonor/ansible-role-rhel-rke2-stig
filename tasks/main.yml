@@ -80,3 +80,124 @@
     - RHEL-09-213045
     - kernel
     - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-433016    Group ID: V-270180
+# Rule Title: The RHEL 9 fapolicy module must be configured to employ a
+#   deny-all, permit-by-exception policy to allow the execution of authorized
+#   software programs.
+# Severity: CAT II
+# Note: Supplements RKE2 RPM-provided rules (80-rke2.rules) with additional
+#   paths for Longhorn, local-path-provisioner, and optional components.
+###########################################################
+- name: RHEL-09-433016 | Deploy supplemental fapolicyd rules for RKE2
+  ansible.builtin.template:
+    src: 60-rke2.rules.j2
+    dest: /etc/fapolicyd/rules.d/60-rke2.rules
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload fapolicyd rules
+  when: rhel_rke2_stig_fapolicyd_enabled | default(true)
+  tags:
+    - RHEL-09-433016
+    - fapolicyd
+    - CAT II
+
+###########################################################
+# STIG ID: N/A (Operational)    Group ID: N/A
+# Rule Title: Load kernel modules required for RKE2 Kubernetes networking
+#   including bridge/netfilter, IPVS, iptables, NAT, and overlay modules.
+#   These modules are NOT on the STIG blacklist.
+# Severity: N/A
+###########################################################
+- name: RKE2-MODULES | Deploy kernel modules configuration
+  ansible.builtin.copy:
+    src: rke2-modules.conf
+    dest: /etc/modules-load.d/rke2-modules.conf
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - rke2
+    - kernel
+
+###########################################################
+# STIG ID: RHEL-09-253075 (EXEMPTION)    Group ID: V-257970
+# Rule Title: RHEL 9 must not enable IPv4 packet forwarding unless the system
+#   is a router. EXEMPTION REQUIRED: Kubernetes nodes require IP forwarding
+#   for pod-to-pod networking. Document with ISSO per STIG guidance.
+# Severity: CAT II
+###########################################################
+- name: RKE2-SYSCTL | Deploy sysctl settings (EXEMPTION RHEL-09-253075)
+  ansible.builtin.copy:
+    src: 98-rke2.conf
+    dest: /etc/sysctl.d/98-rke2.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload sysctl
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-09-253075
+    - CAT II
+
+###########################################################
+# STIG ID: N/A (Operational)    Group ID: N/A
+# Rule Title: Configure NetworkManager to ignore CNI-managed interfaces.
+#   Prevents interference with Canal/Calico/Flannel virtual interfaces.
+# Severity: N/A
+###########################################################
+- name: RKE2-NETWORK | Deploy NetworkManager CNI ignore configuration
+  ansible.builtin.copy:
+    src: rke2-canal.conf
+    dest: /etc/NetworkManager/conf.d/rke2-canal.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload NetworkManager
+  tags:
+    - rke2
+    - networkmanager
+
+###########################################################
+# STIG ID: N/A (Supplements AU-2, AU-3, AU-12)    Group ID: N/A
+# Rule Title: Deploy RKE2-specific audit rules for Kubernetes environments.
+#   Audits RKE2 binaries, config, PKI, container runtime, network changes.
+# Severity: CAT II
+###########################################################
+- name: RKE2-AUDIT | Deploy RKE2-specific audit rules
+  ansible.builtin.copy:
+    src: 10-rke2-server.rules
+    dest: /etc/audit/rules.d/10-rke2-server.rules
+    owner: root
+    group: root
+    mode: '0640'
+  notify: Reload auditd rules
+  tags:
+    - rke2
+    - audit
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-251015 (EXEMPTION)    Group ID: V-257936
+# Rule Title: The firewalld service on RHEL 9 must be active. EXEMPTION
+#   REQUIRED: RKE2 uses iptables directly for pod networking. Running
+#   firewalld concurrently causes unpredictable cluster failures. RKE2's
+#   iptables rules provide equivalent network filtering.
+# Severity: CAT II
+# Also Affects: RHEL-09-251020 (V-257937) - deny-all firewall policy
+###########################################################
+- name: RKE2-FIREWALL | Disable firewalld (EXEMPTION RHEL-09-251015)
+  ansible.builtin.systemd:
+    name: firewalld
+    state: stopped
+    enabled: false
+    masked: true
+  tags:
+    - rke2
+    - firewall
+    - RHEL-09-251015
+    - RHEL-09-251020
+    - CAT II

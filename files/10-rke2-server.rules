@@ -1,0 +1,82 @@
+###############################################################################
+# Filename: /etc/audit/rules.d/10-rke2-server.rules
+# Role: ansible-role-rhel-rke2-stig
+# Summary: STIG-compliant audit rules for RKE2 Kubernetes environments.
+#   Provides comprehensive auditing of RKE2 binaries, configuration, PKI,
+#   container runtime, and network modifications.
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+#
+# STIG Requirements Covered:
+#   NIST SP800-53: AU-2, AU-3, AU-4, AU-5, AU-8, AU-9, AU-12
+#
+# Note: This file supplements the base STIG audit rules (20-stig.rules) with
+#   RKE2/Kubernetes-specific monitoring.
+###############################################################################
+
+###############################################################################
+## RKE2-SPECIFIC AUDIT RULES
+###############################################################################
+
+## Audit Kubernetes configuration changes
+-w /etc/rancher/ -p wa -k k8s_config
+-w /var/lib/rancher/ -p wa -k k8s_data
+
+## Audit RKE2 binary execution
+-a always,exit -F path=/usr/bin/rke2 -F perm=x -F auid>=1000 -F auid!=unset -k rke2_exec
+-a always,exit -F path=/usr/bin/rke2-killall.sh -F perm=x -F auid>=1000 -F auid!=unset -k rke2_exec
+-a always,exit -F path=/usr/bin/rke2-uninstall.sh -F perm=x -F auid>=1000 -F auid!=unset -k rke2_exec
+
+## Audit kubectl execution
+-a always,exit -F path=/usr/bin/kubectl -F perm=x -F auid>=1000 -F auid!=unset -k kubectl_exec
+-a always,exit -F path=/usr/local/bin/kubectl -F perm=x -F auid>=1000 -F auid!=unset -k kubectl_exec
+
+## Audit crictl (container runtime) execution
+-a always,exit -F path=/usr/bin/crictl -F perm=x -F auid>=1000 -F auid!=unset -k container_runtime
+-a always,exit -F path=/var/lib/rancher/rke2/bin/crictl -F perm=x -F auid>=1000 -F auid!=unset -k container_runtime
+
+## Audit etcd data directory (critical for cluster state)
+-w /var/lib/rancher/rke2/server/db/ -p wa -k etcd_data
+
+## Audit Kubernetes PKI/certificates
+-w /var/lib/rancher/rke2/server/tls/ -p wa -k k8s_pki
+
+## Audit containerd configuration
+-w /var/lib/rancher/rke2/agent/etc/containerd/ -p wa -k containerd_config
+
+## Audit CNI configuration changes
+-w /var/lib/rancher/rke2/agent/etc/cni/ -p wa -k cni_config
+-w /etc/cni/ -p wa -k cni_config
+
+## Audit service account tokens
+-w /var/lib/rancher/rke2/server/token -p wa -k k8s_token
+
+## Audit RKE2 systemd service changes
+-w /etc/systemd/system/rke2-server.service -p wa -k rke2_service
+-w /etc/systemd/system/rke2-server.service.env -p wa -k rke2_service
+-w /usr/lib/systemd/system/rke2-server.service -p wa -k rke2_service
+
+## Audit helm execution (if installed)
+-a always,exit -F path=/usr/bin/helm -F perm=x -F auid>=1000 -F auid!=unset -k helm_exec
+-a always,exit -F path=/usr/local/bin/helm -F perm=x -F auid>=1000 -F auid!=unset -k helm_exec
+
+###############################################################################
+## CONTAINER SECURITY AUDIT RULES (DoD Container STIG)
+###############################################################################
+
+## Audit container image operations
+-w /var/lib/rancher/rke2/agent/containerd/io.containerd.content.v1.content/ -p wa -k container_images
+
+## Audit container runtime socket
+-w /run/k3s/containerd/containerd.sock -p wa -k container_socket
+
+## Audit iptables/firewall changes (critical for pod networking)
+-a always,exit -F path=/usr/sbin/iptables -F perm=x -F auid>=1000 -F auid!=unset -k network_modifications
+-a always,exit -F path=/usr/sbin/ip6tables -F perm=x -F auid>=1000 -F auid!=unset -k network_modifications
+-a always,exit -F path=/usr/sbin/iptables-restore -F perm=x -F auid>=1000 -F auid!=unset -k network_modifications
+-a always,exit -F path=/usr/sbin/ip6tables-restore -F perm=x -F auid>=1000 -F auid!=unset -k network_modifications
+-a always,exit -F path=/usr/sbin/nft -F perm=x -F auid>=1000 -F auid!=unset -k network_modifications
+
+###############################################################################
+## END OF RKE2 AUDIT RULES
+###############################################################################
