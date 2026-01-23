@@ -137,13 +137,29 @@ jobs:
           unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
           EOF
           # Verify Podman works
-          podman info --debug
+          podman info
+
+      - name: Test Podman container creation
+        run: |
+          # Pull and test the UBI9 init image
+          podman pull registry.access.redhat.com/ubi9/ubi-init:latest
+          # Test basic container creation with systemd
+          podman run --rm -d --name test-systemd \
+            --privileged \
+            --cgroupns=host \
+            --tmpfs /run --tmpfs /tmp \
+            --cap-add SYS_ADMIN --cap-add AUDIT_WRITE --cap-add AUDIT_CONTROL \
+            registry.access.redhat.com/ubi9/ubi-init:latest /usr/sbin/init
+          sleep 5
+          podman exec test-systemd systemctl status || true
+          podman stop test-systemd || true
 
       - name: Run Molecule tests
-        run: molecule test --scenario-name ${{ matrix.scenario }}
+        run: molecule --debug test --scenario-name ${{ matrix.scenario }}
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
+          ANSIBLE_VERBOSITY: '2'
 
   ###########################################################
   # Security Scan Stage

@@ -23,7 +23,7 @@ platforms:
     privileged: true
     command: /usr/sbin/init
     # cgroups v2 compatibility for GitHub Actions runners
-    cgroupns: host
+    cgroupns_mode: host
     tmpfs:
       - /run
       - /tmp
