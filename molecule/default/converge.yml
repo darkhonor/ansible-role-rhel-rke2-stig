@@ -10,6 +10,6 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Include rhel_rke2_stig role
+    - name: Include role under test
       ansible.builtin.include_role:
-        name: ansible-role-rhel-rke2-stig
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
