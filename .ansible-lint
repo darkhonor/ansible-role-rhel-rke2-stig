@@ -43,9 +43,6 @@ progressive: false
 # Strict mode - fail on warnings
 strict: true
 
-# Set minimum Ansible version
-min_ansible_version: "2.10"
-
 # Configure specific rules
 rules:
   yaml[line-length]:

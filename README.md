@@ -141,6 +141,25 @@ ansible-playbook site.yml --tags RHEL-09-611075
 | `/etc/audit/rules.d/20-stig.rules` | STIG-compliant audit rules |
 | `/etc/modprobe.d/blacklist.conf` | Kernel module blacklist |
 
+## Development Setup
+
+### Pre-commit Hooks
+
+This repository uses pre-commit hooks to catch issues before pushing:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install the git hooks
+pre-commit install
+
+# (Optional) Run against all files
+pre-commit run --all-files
+```
+
+Once installed, yamllint and ansible-lint run automatically on every commit.
+
 ## Testing
 
 This role is tested using Molecule with Podman:
