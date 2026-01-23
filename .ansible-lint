@@ -42,8 +42,3 @@ progressive: false
 
 # Strict mode - fail on warnings
 strict: true
-
-# Configure specific rules
-rules:
-  yaml[line-length]:
-    max: 256
