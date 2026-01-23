@@ -2,7 +2,7 @@
 ###############################################################################
 # Filename: molecule/default/molecule.yml
 # Role: ansible-role-rhel-rke2-stig
-# Summary: Molecule test configuration for RHEL 9 STIG compliance role
+# Summary: Molecule test configuration using CentOS Stream 9 for RHEL 9 STIG testing
 # Last Updated: 23 Jan 2026
 # Classification: UNCLASSIFIED
 ###############################################################################
@@ -17,8 +17,9 @@ driver:
 
 platforms:
   - name: rhel9-stig
-    # Use UBI9 as RHEL 9 equivalent for testing (freely available)
-    image: registry.access.redhat.com/ubi9/ubi-init:latest
+    # Use CentOS Stream 9 for production-realistic RHEL 9 testing
+    # Provides full package repos including audit, aide, fapolicyd, etc.
+    image: quay.io/centos/centos:stream9
     pre_build_image: true
     privileged: true
     command: /usr/sbin/init
