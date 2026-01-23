@@ -43,20 +43,14 @@
           - kmod           # Kernel module tools
         state: present
 
-    - name: Ensure auditd service is enabled and started
-      ansible.builtin.service:
-        name: auditd
-        state: started
-        enabled: true
-      ignore_errors: true  # May fail in container without full systemd
+    # Note: auditd cannot run in containers (requires kernel audit subsystem)
+    # The audit package is installed for directory structure and tools only
+    # Rule files will be deployed but not loaded until running on real hardware
+    - name: Verify audit rules directory exists
+      ansible.builtin.stat:
+        path: /etc/audit/rules.d
+      register: audit_rules_dir
 
-    - name: Display auditd service status
-      ansible.builtin.command:
-        cmd: systemctl status auditd
-      register: auditd_status
-      changed_when: false
-      failed_when: false
-
-    - name: Show auditd status
+    - name: Display audit setup status
       ansible.builtin.debug:
-        var: auditd_status.stdout_lines
+        msg: "Audit rules directory ready: {{ audit_rules_dir.stat.exists }}"

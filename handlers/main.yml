@@ -6,8 +6,17 @@
 # Last Updated: 23 Jan 2026
 # Classification: UNCLASSIFIED
 ###############################################################################
+- name: Check if auditd is running
+  ansible.builtin.command:
+    cmd: systemctl is-active auditd
+  register: auditd_active
+  changed_when: false
+  failed_when: false
+  listen: Reload auditd rules
+
 - name: Reload auditd rules
   ansible.builtin.command:
     cmd: augenrules --load
   changed_when: true
+  when: auditd_active.rc == 0
   listen: Reload auditd rules
