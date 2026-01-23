@@ -9,7 +9,13 @@
 - name: Converge
   hosts: all
   gather_facts: true
+  vars:
+    role_name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+  pre_tasks:
+    - name: Debug role information
+      ansible.builtin.debug:
+        msg: "Including role: {{ role_name }} from {{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
   tasks:
     - name: Include role under test
       ansible.builtin.include_role:
-        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        name: "{{ role_name }}"

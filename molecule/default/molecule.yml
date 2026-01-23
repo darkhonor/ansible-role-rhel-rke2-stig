@@ -42,6 +42,8 @@ provisioner:
     host_vars:
       rhel9-stig:
         ansible_python_interpreter: /usr/bin/python3
+  env:
+    ANSIBLE_ROLES_PATH: "${MOLECULE_PROJECT_DIRECTORY}/.."
   config_options:
     defaults:
       callbacks_enabled: profile_tasks
