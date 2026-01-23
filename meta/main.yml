@@ -7,6 +7,8 @@
 # Classification: UNCLASSIFIED
 ###############################################################################
 galaxy_info:
+  namespace: darkhonor
+  role_name: rhel_rke2_stig
   author: Alex Ackerman
   description: Ansible Role to ensure RHEL systems running RKE2 are compliant with STIG guidelines.
   license: Apache-2.0
@@ -16,7 +18,6 @@ galaxy_info:
       versions:
         - '9'
         - '10'
-  role_name: rhel_rke2_stig
   galaxy_tags:
     - security
     - stig

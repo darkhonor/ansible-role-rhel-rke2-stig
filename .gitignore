@@ -45,10 +45,10 @@ crash.log
 crash.*.log
 
 # Exclude all .tfvars files, which are likely to contain sensitive data, such as
-# password, private keys, and other secrets. These should not be part of version 
-# control as they are data points which are potentially sensitive and subject 
+# password, private keys, and other secrets. These should not be part of version
+# control as they are data points which are potentially sensitive and subject
 # to change depending on the environment.
-# 
+#
 # THIS IS A POLICY CHOICE--SENSITIVE INFORMATION WILL BE KEPT IN ANSIBLE VARS / VAULT
 #
 # *.tfvars
@@ -80,9 +80,9 @@ packer_cache/
 crash.log
 
 # https://www.packer.io/guides/hcl/variables
-# Exclude all .pkrvars.hcl files, which are likely to contain sensitive data, 
-# such as password, private keys, and other secrets. These should not be part of 
-# version control as they are data points which are potentially sensitive and 
+# Exclude all .pkrvars.hcl files, which are likely to contain sensitive data,
+# such as password, private keys, and other secrets. These should not be part of
+# version control as they are data points which are potentially sensitive and
 # subject to change depending on the environment.
 #
 # NOT EXCLUDED INTENTIONALLY; SENSITIVE VALUES NOT STORED HERE
@@ -105,3 +105,6 @@ CLAUDE.md
 # Reference STIG files
 stigs/
 docs/
+
+# Ansible-lint local cache
+.ansible/

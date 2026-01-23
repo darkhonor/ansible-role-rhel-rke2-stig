@@ -25,7 +25,7 @@ repos:
       - id: ansible-lint
         args: []
         additional_dependencies:
-          - ansible-core>=2.15
+          - ansible-core==2.17.8
 
   # General file hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks

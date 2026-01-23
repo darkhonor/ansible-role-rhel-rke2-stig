@@ -9,4 +9,5 @@
 - name: Reload auditd rules
   ansible.builtin.command:
     cmd: augenrules --load
+  changed_when: true
   listen: Reload auditd rules
