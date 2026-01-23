@@ -134,22 +134,22 @@ jobs:
           # Create registries config for unqualified image pulls
           mkdir -p ~/.config/containers
           cat > ~/.config/containers/registries.conf << 'EOF'
-          unqualified-search-registries = ["quay.io", "docker.io"]
+          unqualified-search-registries = ["registry.access.redhat.com", "docker.io"]
           EOF
           # Verify Podman works
           podman info
 
       - name: Test Podman container creation
         run: |
-          # Pull and test CentOS Stream 9 for RHEL 9 compatible testing
-          podman pull quay.io/centos/centos:stream9
+          # Pull and test official Red Hat UBI9-init (SCRM compliant)
+          podman pull registry.access.redhat.com/ubi9/ubi-init:latest
           # Test basic container creation with systemd
           podman run --rm -d --name test-systemd \
             --privileged \
             --cgroupns=host \
             --tmpfs /run --tmpfs /tmp \
             --cap-add SYS_ADMIN --cap-add AUDIT_WRITE --cap-add AUDIT_CONTROL \
-            quay.io/centos/centos:stream9 /usr/sbin/init
+            registry.access.redhat.com/ubi9/ubi-init:latest /usr/sbin/init
           sleep 5
           podman exec test-systemd systemctl status || true
           podman stop test-systemd || true

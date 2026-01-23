@@ -10,6 +10,31 @@
   hosts: all
   gather_facts: true
   tasks:
+    # Enable CentOS Stream 9 repos for packages not in UBI9
+    # Uses official CentOS mirrors (SCRM compliant - NIST SP800-53 SR)
+    - name: Add CentOS Stream 9 BaseOS repository
+      ansible.builtin.yum_repository:
+        name: centos-stream-9-baseos
+        description: CentOS Stream 9 - BaseOS
+        baseurl: https://mirror.stream.centos.org/9-stream/BaseOS/$basearch/os/
+        gpgcheck: true
+        gpgkey: https://www.centos.org/keys/RPM-GPG-KEY-CentOS-Official
+        enabled: true
+
+    - name: Add CentOS Stream 9 AppStream repository
+      ansible.builtin.yum_repository:
+        name: centos-stream-9-appstream
+        description: CentOS Stream 9 - AppStream
+        baseurl: https://mirror.stream.centos.org/9-stream/AppStream/$basearch/os/
+        gpgcheck: true
+        gpgkey: https://www.centos.org/keys/RPM-GPG-KEY-CentOS-Official
+        enabled: true
+
+    - name: Import CentOS GPG key
+      ansible.builtin.rpm_key:
+        key: https://www.centos.org/keys/RPM-GPG-KEY-CentOS-Official
+        state: present
+
     - name: Install required packages for STIG testing
       ansible.builtin.dnf:
         name:
