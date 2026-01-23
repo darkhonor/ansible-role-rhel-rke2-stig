@@ -1,0 +1,36 @@
+---
+###############################################################################
+# Filename: .yamllint
+# Role: ansible-role-rhel-rke2-stig
+# Summary: YAML linting configuration for CI/CD pipeline
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+extends: default
+
+rules:
+  line-length:
+    # Allow longer lines for audit rules and complex module parameters
+    max: 256
+    level: warning
+  truthy:
+    # Allow 'yes' and 'no' for Ansible boolean values
+    allowed-values: ['true', 'false', 'yes', 'no']
+  comments:
+    # Require space after comment hash
+    require-starting-space: true
+    min-spaces-from-content: 1
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+ignore: |
+  .github/
+  .cache/
+  stigs/

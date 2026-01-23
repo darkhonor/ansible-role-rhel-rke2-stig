@@ -1,0 +1,12 @@
+---
+###############################################################################
+# Filename: handlers/main.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Event handlers for RHEL RKE2 STIG compliance role
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+- name: Reload auditd rules
+  ansible.builtin.command:
+    cmd: augenrules --load
+  listen: Reload auditd rules

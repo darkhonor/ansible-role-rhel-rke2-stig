@@ -1,0 +1,18 @@
+###############################################################################
+# Filename: /etc/audit/rules.d/20-stig.rules
+# Summary: RHEL RKE2 STIG Audit Rules
+# Severity: CAT II
+# Last Updated: 22 Jan 2026
+# Classification: UNCLASSIFIED
+#
+# This file is managed by Ansible. Manual changes will be overwritten.
+###############################################################################
+{% for rule in rhel9_rke2_stig_audit_rules %}
+###########################################################
+# STIG-ID: {{ rule.stig_id }}    Group ID: {{ rule.group_id }}
+# Rule Title: {{ rule.rule_title }}
+# Severity: {{ rule.severity }}
+###########################################################
+{{ rule.audit_rule }}
+
+{% endfor %}

@@ -1,0 +1,70 @@
+---
+###############################################################################
+# Filename: molecule/default/molecule.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Molecule test configuration for RHEL 9 STIG compliance role
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    role-file: requirements.yml
+
+driver:
+  name: podman
+
+platforms:
+  - name: rhel9-stig
+    # Use UBI9 as RHEL 9 equivalent for testing (freely available)
+    image: registry.access.redhat.com/ubi9/ubi-init:latest
+    pre_build_image: true
+    privileged: true
+    command: /usr/sbin/init
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    capabilities:
+      - SYS_ADMIN
+      - AUDIT_WRITE
+      - AUDIT_CONTROL
+
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: prepare.yml
+    converge: converge.yml
+    verify: verify.yml
+  inventory:
+    host_vars:
+      rhel9-stig:
+        ansible_python_interpreter: /usr/bin/python3
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks
+      gathering: smart
+      fact_caching: jsonfile
+      fact_caching_connection: /tmp/ansible_facts
+    ssh_connection:
+      pipelining: true
+
+verifier:
+  name: ansible
+
+scenario:
+  name: default
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - cleanup
+    - destroy

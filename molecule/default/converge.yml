@@ -1,0 +1,15 @@
+---
+###############################################################################
+# Filename: molecule/default/converge.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Apply the STIG role to test container
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+- name: Converge
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include rhel_rke2_stig role
+      ansible.builtin.include_role:
+        name: ansible-role-rhel-rke2-stig

@@ -1,0 +1,86 @@
+---
+###############################################################################
+# Filename: molecule/default/verify.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Verify STIG configurations were applied correctly
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    ###########################################################
+    # Verify password policy settings
+    ###########################################################
+    - name: Verify PASS_MIN_DAYS is set in login.defs
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MIN_DAYS\s+1'
+        state: absent
+      check_mode: true
+      register: pass_min_days
+      failed_when: pass_min_days.changed
+
+    ###########################################################
+    # Verify audit rules file exists and has content
+    ###########################################################
+    - name: Verify STIG audit rules file exists
+      ansible.builtin.stat:
+        path: /etc/audit/rules.d/20-stig.rules
+      register: audit_rules_file
+
+    - name: Assert audit rules file exists
+      ansible.builtin.assert:
+        that:
+          - audit_rules_file.stat.exists
+          - audit_rules_file.stat.size > 0
+        fail_msg: "STIG audit rules file missing or empty"
+        success_msg: "STIG audit rules file exists and has content"
+
+    - name: Verify audit rules contain expected entries
+      ansible.builtin.command:
+        cmd: grep -c "STIG-ID" /etc/audit/rules.d/20-stig.rules
+      register: audit_rules_count
+      changed_when: false
+      failed_when: audit_rules_count.stdout | int < 50
+
+    ###########################################################
+    # Verify kernel module blacklist
+    ###########################################################
+    - name: Verify kernel module blacklist file exists
+      ansible.builtin.stat:
+        path: /etc/modprobe.d/blacklist.conf
+      register: blacklist_file
+
+    - name: Assert blacklist file exists
+      ansible.builtin.assert:
+        that:
+          - blacklist_file.stat.exists
+          - blacklist_file.stat.size > 0
+        fail_msg: "Kernel module blacklist file missing or empty"
+        success_msg: "Kernel module blacklist file exists and has content"
+
+    - name: Verify blacklist contains required modules
+      ansible.builtin.command:
+        cmd: grep -E "^blacklist (atm|can|firewire-core|sctp|tipc|cramfs|usb-storage|bluetooth)" /etc/modprobe.d/blacklist.conf
+      register: blacklist_content
+      changed_when: false
+      failed_when: blacklist_content.stdout_lines | length < 8
+
+    ###########################################################
+    # Verify file permissions
+    ###########################################################
+    - name: Verify audit rules file permissions
+      ansible.builtin.assert:
+        that:
+          - audit_rules_file.stat.mode == '0640'
+        fail_msg: "Audit rules file has incorrect permissions"
+        success_msg: "Audit rules file permissions are correct (0640)"
+
+    - name: Verify blacklist file permissions
+      ansible.builtin.assert:
+        that:
+          - blacklist_file.stat.mode == '0644'
+        fail_msg: "Blacklist file has incorrect permissions"
+        success_msg: "Blacklist file permissions are correct (0644)"

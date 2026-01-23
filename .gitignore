@@ -1,0 +1,107 @@
+# Recommended macOS gitignore Includes:
+# Source: https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
+
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Ackerman addition
+log/
+
+# Recommeded Terraform gitignore Includes:
+# Source: https://github.com/github/gitignore/blob/main/Terraform.gitignore
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files, which are likely to contain sensitive data, such as
+# password, private keys, and other secrets. These should not be part of version 
+# control as they are data points which are potentially sensitive and subject 
+# to change depending on the environment.
+# 
+# THIS IS A POLICY CHOICE--SENSITIVE INFORMATION WILL BE KEPT IN ANSIBLE VARS / VAULT
+#
+# *.tfvars
+# *.tfvars.json
+
+# Ignore override files as they are usually used to override resources locally and so
+# are not checked in
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include override files you do wish to add to version control using negated pattern
+# !example_override.tf
+
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+# example: *tfplan*
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Recommended Packer .gitignore additions
+# Source: https://github.com/github/gitignore/blob/main/Packer.gitignore
+# Cache objects
+packer_cache/
+
+# Crash log
+crash.log
+
+# https://www.packer.io/guides/hcl/variables
+# Exclude all .pkrvars.hcl files, which are likely to contain sensitive data, 
+# such as password, private keys, and other secrets. These should not be part of 
+# version control as they are data points which are potentially sensitive and 
+# subject to change depending on the environment.
+#
+# NOT EXCLUDED INTENTIONALLY; SENSITIVE VALUES NOT STORED HERE
+#*.pkrvars.hcl
+
+# For built boxes
+*.box
+
+# Sensitive Info
+sensitive.txt
+
+# Claude AI Local Settings
+.claude
+CLAUDE.md
+
+# Screenshots aren't necessary to share
+**/*.png
+**/*.jpg
+
+# Reference STIG files
+stigs/
+docs/

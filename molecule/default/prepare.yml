@@ -1,0 +1,26 @@
+---
+###############################################################################
+# Filename: molecule/default/prepare.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Prepare test container with required packages for STIG testing
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Install required packages for testing
+      ansible.builtin.dnf:
+        name:
+          - audit
+          - kmod
+          - procps-ng
+        state: present
+
+    - name: Ensure audit service is available
+      ansible.builtin.service:
+        name: auditd
+        state: started
+        enabled: true
+      ignore_errors: true  # May fail in container without full systemd

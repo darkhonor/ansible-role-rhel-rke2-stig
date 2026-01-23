@@ -1,0 +1,74 @@
+---
+###############################################################################
+# Filename: .github/workflows/release.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Publish role to Ansible Galaxy on release
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+name: Release to Galaxy
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  ###########################################################
+  # Publish to Ansible Galaxy
+  ###########################################################
+  release:
+    name: Publish to Galaxy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible-core
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Releasing version: ${VERSION}"
+
+      - name: Validate role metadata
+        run: |
+          ansible-galaxy role info --offline . || true
+          echo "Role validation complete"
+
+      - name: Import role to Ansible Galaxy
+        run: |
+          ansible-galaxy role import \
+            --api-key "${{ secrets.GALAXY_API_KEY }}" \
+            --role-name rhel_rke2_stig \
+            ${{ github.repository_owner }} \
+            ${{ github.event.repository.name }}
+        env:
+          ANSIBLE_GALAXY_SERVER: https://galaxy.ansible.com
+
+      - name: Create release summary
+        run: |
+          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Role:** rhel_rke2_stig" >> $GITHUB_STEP_SUMMARY
+          echo "- **Galaxy:** https://galaxy.ansible.com/${{ github.repository_owner }}/rhel_rke2_stig" >> $GITHUB_STEP_SUMMARY

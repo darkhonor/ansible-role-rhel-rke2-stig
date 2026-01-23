@@ -1,0 +1,13 @@
+---
+###############################################################################
+# Filename: molecule/default/requirements.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Ansible Galaxy requirements for Molecule testing
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+collections:
+  - name: ansible.posix
+    version: ">=1.5.0"
+  - name: community.general
+    version: ">=8.0.0"

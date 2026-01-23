@@ -1,0 +1,633 @@
+###############################################################################
+# Filename: vars/main.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Fixed variables for RHEL RKE2 STIG compliance - contains audit
+#   rules and kernel module blacklist for RHEL 9 systems
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+rhel9_rke2_stig_audit_rules:
+  # STIG ID: RHEL-09-654010    Group ID: V-258176
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654010"
+    group_id: "V-258176"
+    rule_title: >
+      RHEL 9 must audit uses of the "execve" system call.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k execpriv
+      -a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k execpriv
+      -a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -k execpriv
+      -a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -k execpriv
+
+  # STIG ID: RHEL-09-654015    Group ID: V-258177
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654015"
+    group_id: "V-258177"
+    rule_title: >
+      RHEL 9 must audit all uses of the chmod, fchmod, and fchmodat system
+      calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S chmod,fchmod,fchmodat -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b64 -S chmod,fchmod,fchmodat -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-09-654020    Group ID: V-258178
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654020"
+    group_id: "V-258178"
+    rule_title: >
+      RHEL 9 must audit all uses of the chown, fchown, fchownat, and lchown
+      system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S chown,fchown,fchownat,lchown -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b64 -S chown,fchown,fchownat,lchown -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-09-654025    Group ID: V-258179
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654025"
+    group_id: "V-258179"
+    rule_title: >
+      RHEL 9 must audit all uses of the setxattr, fsetxattr, lsetxattr,
+      removexattr, fremovexattr, and lremovexattr system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b64 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b32 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid=0 -k perm_mod
+      -a always,exit -F arch=b64 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid=0 -k perm_mod
+
+  # STIG ID: RHEL-09-654030    Group ID: V-258180
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654030"
+    group_id: "V-258180"
+    rule_title: >
+      RHEL 9 must audit all uses of umount system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/umount -F perm=x -F auid>=1000 -F auid!=unset -k privileged-mount
+
+  # STIG ID: RHEL-09-654035    Group ID: V-258181
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654035"
+    group_id: "V-258181"
+    rule_title: >
+      RHEL 9 must audit all uses of the chacl command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-09-654040    Group ID: V-258182
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654040"
+    group_id: "V-258182"
+    rule_title: >
+      RHEL 9 must audit all uses of the setfacl command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/setfacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-09-654045    Group ID: V-258183
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654045"
+    group_id: "V-258183"
+    rule_title: >
+      RHEL 9 must audit all uses of the chcon command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chcon -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-09-654050    Group ID: V-258184
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654050"
+    group_id: "V-258184"
+    rule_title: >
+      RHEL 9 must audit all uses of the semanage command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/semanage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-09-654055    Group ID: V-258185
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654055"
+    group_id: "V-258185"
+    rule_title: >
+      RHEL 9 must audit all uses of the setfiles command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/setfiles -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-09-654060    Group ID: V-258186
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654060"
+    group_id: "V-258186"
+    rule_title: >
+      RHEL 9 must audit all uses of the setsebool command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/setsebool -F perm=x -F auid>=1000 -F auid!=unset -F key=privileged
+
+  # STIG ID: RHEL-09-654065    Group ID: V-258187
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654065"
+    group_id: "V-258187"
+    rule_title: >
+      RHEL 9 must audit all uses of the rename, unlink, rmdir, renameat, and
+      unlinkat system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S rename,unlink,rmdir,renameat,unlinkat -F auid>=1000 -F auid!=unset -k delete
+      -a always,exit -F arch=b64 -S rename,unlink,rmdir,renameat,unlinkat -F auid>=1000 -F auid!=unset -k delete
+
+  # STIG ID: RHEL-09-654070    Group ID: V-258188
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654070"
+    group_id: "V-258188"
+    rule_title: >
+      RHEL 9 must audit all uses of the truncate, ftruncate, creat, open,
+      openat, and open_by_handle_at system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -k perm_access
+      -a always,exit -F arch=b64 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -k perm_access
+      -a always,exit -F arch=b32 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -k perm_access
+      -a always,exit -F arch=b64 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -k perm_access
+
+  # STIG ID: RHEL-09-654075    Group ID: V-258189
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654075"
+    group_id: "V-258189"
+    rule_title: >
+      RHEL 9 must audit all uses of the delete_module system call.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S delete_module -F auid>=1000 -F auid!=unset -k module_chng
+      -a always,exit -F arch=b64 -S delete_module -F auid>=1000 -F auid!=unset -k module_chng
+
+  # STIG ID: RHEL-09-654080    Group ID: V-258190
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654080"
+    group_id: "V-258190"
+    rule_title: >
+      RHEL 9 must audit all uses of the init_module and finit_module system
+      calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S init_module,finit_module -F auid>=1000 -F auid!=unset -k module_chng
+      -a always,exit -F arch=b64 -S init_module,finit_module -F auid>=1000 -F auid!=unset -k module_chng
+
+  # STIG ID: RHEL-09-654085    Group ID: V-258191
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654085"
+    group_id: "V-258191"
+    rule_title: >
+      RHEL 9 must audit all uses of the chage command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-chage
+
+  # STIG ID: RHEL-09-654090    Group ID: V-258192
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654090"
+    group_id: "V-258192"
+    rule_title: >
+      RHEL 9 must audit all uses of the chsh command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chsh -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-09-654095    Group ID: V-258193
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654095"
+    group_id: "V-258193"
+    rule_title: >
+      RHEL 9 must audit all uses of the crontab command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/crontab -F perm=x -F auid>=1000 -F auid!=unset -k privileged-crontab
+
+  # STIG ID: RHEL-09-654100    Group ID: V-258194
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654100"
+    group_id: "V-258194"
+    rule_title: >
+      RHEL 9 must audit all uses of the gpasswd command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-gpasswd
+
+  # STIG ID: RHEL-09-654105    Group ID: V-258195
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654105"
+    group_id: "V-258195"
+    rule_title: >
+      RHEL 9 must audit all uses of the kmod command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/kmod -F perm=x -F auid>=1000 -F auid!=unset -k modules
+
+  # STIG ID: RHEL-09-654110    Group ID: V-258196
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654110"
+    group_id: "V-258196"
+    rule_title: >
+      RHEL 9 must audit all uses of the newgrp command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-09-654115    Group ID: V-258197
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654115"
+    group_id: "V-258197"
+    rule_title: >
+      RHEL 9 must audit all uses of the pam_timestamp_check command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/pam_timestamp_check -F perm=x -F auid>=1000 -F auid!=unset -k privileged-pam_timestamp_check
+
+  # STIG ID: RHEL-09-654120    Group ID: V-258198
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654120"
+    group_id: "V-258198"
+    rule_title: >
+      RHEL 9 must audit all uses of the passwd command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/passwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-passwd
+
+  # STIG ID: RHEL-09-654125    Group ID: V-258199
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654125"
+    group_id: "V-258199"
+    rule_title: >
+      RHEL 9 must audit all uses of the postdrop command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/postdrop -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-09-654130    Group ID: V-258200
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654130"
+    group_id: "V-258200"
+    rule_title: >
+      RHEL 9 must audit all uses of the postqueue command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/postqueue -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-09-654135    Group ID: V-258201
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654135"
+    group_id: "V-258201"
+    rule_title: >
+      RHEL 9 must audit all uses of the ssh-agent command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/ssh-agent -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+
+  # STIG ID: RHEL-09-654140    Group ID: V-258202
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654140"
+    group_id: "V-258202"
+    rule_title: >
+      RHEL 9 must audit all uses of the ssh-keysign command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/libexec/openssh/ssh-keysign -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+
+  # STIG ID: RHEL-09-654145    Group ID: V-258203
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654145"
+    group_id: "V-258203"
+    rule_title: >
+      RHEL 9 must audit all uses of the su command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/su -F perm=x -F auid>=1000 -F auid!=unset -k privileged-priv_change
+
+  # STIG ID: RHEL-09-654150    Group ID: V-258204
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654150"
+    group_id: "V-258204"
+    rule_title: >
+      RHEL 9 must audit all uses of the sudo command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-09-654155    Group ID: V-258205
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654155"
+    group_id: "V-258205"
+    rule_title: >
+      RHEL 9 must audit all uses of the sudoedit command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/sudoedit -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-09-654160    Group ID: V-258206
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654160"
+    group_id: "V-258206"
+    rule_title: >
+      RHEL 9 must audit all uses of the unix_chkpwd command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-09-654165    Group ID: V-258207
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654165"
+    group_id: "V-258207"
+    rule_title: >
+      RHEL 9 must audit all uses of the unix_update command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/unix_update -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-09-654170    Group ID: V-258208
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654170"
+    group_id: "V-258208"
+    rule_title: >
+      RHEL 9 must audit all uses of the userhelper command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-09-654175    Group ID: V-258209
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654175"
+    group_id: "V-258209"
+    rule_title: >
+      RHEL 9 must audit all uses of the usermod command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid>=1000 -F auid!=unset -k privileged-usermod
+
+  # STIG ID: RHEL-09-654180    Group ID: V-258210
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654180"
+    group_id: "V-258210"
+    rule_title: >
+      RHEL 9 must audit all uses of the mount command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/mount -F perm=x -F auid>=1000 -F auid!=unset -k privileged-mount
+
+  # STIG ID: RHEL-09-654185    Group ID: V-258211
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654185"
+    group_id: "V-258211"
+    rule_title: >
+      Successful/unsuccessful uses of the init command in RHEL 9 must generate
+      an audit record.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/init -F perm=x -F auid>=1000 -F auid!=unset -k privileged-init
+
+  # STIG ID: RHEL-09-654190    Group ID: V-258212
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654190"
+    group_id: "V-258212"
+    rule_title: >
+      Successful/unsuccessful uses of the poweroff command in RHEL 9 must
+      generate an audit record.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/poweroff -F perm=x -F auid>=1000 -F auid!=unset -k privileged-poweroff
+
+  # STIG ID: RHEL-09-654195    Group ID: V-258213
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654195"
+    group_id: "V-258213"
+    rule_title: >
+      Successful/unsuccessful uses of the reboot command in RHEL 9 must
+      generate an audit record.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/reboot -F perm=x -F auid>=1000 -F auid!=unset -k privileged-reboot
+
+  # STIG ID: RHEL-09-654200    Group ID: V-258214
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654200"
+    group_id: "V-258214"
+    rule_title: >
+      Successful/unsuccessful uses of the shutdown command in RHEL 9 must
+      generate an audit record.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/shutdown -F perm=x -F auid>=1000 -F auid!=unset -k privileged-shutdown
+
+  # STIG ID: RHEL-09-654205    Group ID: V-258215
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654205"
+    group_id: "V-258215"
+    rule_title: >
+      Successful/unsuccessful uses of the umount system call in RHEL 9 must
+      generate an audit record.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S umount -F auid>=1000 -F auid!=unset -k privileged-umount
+
+  # STIG ID: RHEL-09-654210    Group ID: V-258216
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654210"
+    group_id: "V-258216"
+    rule_title: >
+      Successful/unsuccessful uses of the umount2 system call in RHEL 9 must
+      generate an audit record.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S umount2 -F auid>=1000 -F auid!=unset -k privileged-umount
+      -a always,exit -F arch=b64 -S umount2 -F auid>=1000 -F auid!=unset -k privileged-umount
+
+  # STIG ID: RHEL-09-654215    Group ID: V-258217
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654215"
+    group_id: "V-258217"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /etc/sudoers.
+    severity: "CAT II"
+    audit_rule: |
+      -w /etc/sudoers -p wa -k identity
+
+  # STIG ID: RHEL-09-654220    Group ID: V-258218
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654220"
+    group_id: "V-258218"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /etc/sudoers.d/ directory.
+    severity: "CAT II"
+    audit_rule: |
+      -w /etc/sudoers.d/ -p wa -k identity
+
+  # STIG ID: RHEL-09-654225    Group ID: V-258219
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654225"
+    group_id: "V-258219"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect /etc/group.
+    severity: "CAT II"
+    audit_rule: |
+      -w /etc/group -p wa -k identity
+
+  # STIG ID: RHEL-09-654230    Group ID: V-258220
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654230"
+    group_id: "V-258220"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /etc/gshadow.
+    severity: "CAT II"
+    audit_rule: |
+      -w /etc/gshadow -p wa -k identity
+
+  # STIG ID: RHEL-09-654235    Group ID: V-258221
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654235"
+    group_id: "V-258221"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /etc/opasswd.
+    severity: "CAT II"
+    audit_rule: |
+      -w /etc/security/opasswd -p wa -k identity
+
+  # STIG ID: RHEL-09-654240    Group ID: V-258222
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654240"
+    group_id: "V-258222"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /etc/passwd.
+    severity: "CAT II"
+    audit_rule: |
+      -w /etc/passwd -p wa -k identity
+
+  # STIG ID: RHEL-09-654245    Group ID: V-258223
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654245"
+    group_id: "V-258223"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /etc/shadow.
+    severity: "CAT II"
+    audit_rule: |
+      -w /etc/shadow -p wa -k identity
+
+  # STIG ID: RHEL-09-654250    Group ID: V-258224
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654250"
+    group_id: "V-258224"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /var/log/faillock.
+    severity: "CAT II"
+    audit_rule: |
+      -w /var/log/faillock -p wa -k logins
+
+  # STIG ID: RHEL-09-654255    Group ID: V-258225
+  # Severity: CAT II
+  - stig_id: "RHEL-09-654255"
+    group_id: "V-258225"
+    rule_title: >
+      RHEL 9 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      /var/log/lastlog.
+    severity: "CAT II"
+    audit_rule: |
+      -w /var/log/lastlog -p wa -k logins
+
+###############################################################################
+# Kernel Module Blacklist - STIG required modules to disable
+###############################################################################
+rhel9_rke2_stig_blacklist_modules:
+  # STIG ID: RHEL-09-213045    Group ID: V-257804
+  # Severity: CAT II
+  - stig_id: "RHEL-09-213045"
+    group_id: "V-257804"
+    rule_title: >
+      RHEL 9 must be configured to disable the Asynchronous Transfer Mode
+      kernel module.
+    severity: "CAT II"
+    module_name: "atm"
+
+  # STIG ID: RHEL-09-213050    Group ID: V-257805
+  # Severity: CAT II
+  - stig_id: "RHEL-09-213050"
+    group_id: "V-257805"
+    rule_title: >
+      RHEL 9 must be configured to disable the Controller Area Network
+      kernel module.
+    severity: "CAT II"
+    module_name: "can"
+
+  # STIG ID: RHEL-09-213055    Group ID: V-257806
+  # Severity: CAT II
+  - stig_id: "RHEL-09-213055"
+    group_id: "V-257806"
+    rule_title: >
+      RHEL 9 must be configured to disable the FireWire kernel module.
+    severity: "CAT II"
+    module_name: "firewire-core"
+
+  # STIG ID: RHEL-09-213060    Group ID: V-257807
+  # Severity: CAT II
+  - stig_id: "RHEL-09-213060"
+    group_id: "V-257807"
+    rule_title: >
+      RHEL 9 must disable the Stream Control Transmission Protocol (SCTP)
+      kernel module.
+    severity: "CAT II"
+    module_name: "sctp"
+
+  # STIG ID: RHEL-09-213065    Group ID: V-257808
+  # Severity: CAT II
+  - stig_id: "RHEL-09-213065"
+    group_id: "V-257808"
+    rule_title: >
+      RHEL 9 must disable the Transparent Inter Process Communication (TIPC)
+      kernel module.
+    severity: "CAT II"
+    module_name: "tipc"
+
+  # STIG ID: RHEL-09-231195    Group ID: V-257880
+  # Severity: CAT III
+  - stig_id: "RHEL-09-231195"
+    group_id: "V-257880"
+    rule_title: >
+      RHEL 9 must disable mounting of cramfs.
+    severity: "CAT III"
+    module_name: "cramfs"
+
+  # STIG ID: RHEL-09-291010    Group ID: V-258034
+  # Severity: CAT II
+  - stig_id: "RHEL-09-291010"
+    group_id: "V-258034"
+    rule_title: >
+      RHEL 9 must be configured to disable USB mass storage.
+    severity: "CAT II"
+    module_name: "usb-storage"
+
+  # STIG ID: RHEL-09-291035    Group ID: V-258039
+  # Severity: CAT II
+  - stig_id: "RHEL-09-291035"
+    group_id: "V-258039"
+    rule_title: >
+      RHEL 9 Bluetooth must be disabled.
+    severity: "CAT II"
+    module_name: "bluetooth"
+

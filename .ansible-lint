@@ -1,0 +1,52 @@
+---
+###############################################################################
+# Filename: .ansible-lint
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Ansible linting configuration for CI/CD pipeline
+# Last Updated: 23 Jan 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+
+# Profile: security-focused (stricter than default)
+profile: production
+
+# Enforce FQCN for all modules
+enable_list:
+  - fqcn-builtins
+  - no-changed-when
+
+# Skip rules that conflict with STIG requirements or role design
+skip_list:
+  # command/shell modules are needed for augenrules --load
+  - command-instead-of-module
+  # Some STIG tasks require specific line formats
+  - risky-file-permissions
+
+# Warn but don't fail on these
+warn_list:
+  - experimental
+  - role-name
+
+# Exclude paths from linting
+exclude_paths:
+  - .github/
+  - .cache/
+  - stigs/
+  - molecule/
+
+# Offline mode (don't download Galaxy dependencies during lint)
+offline: false
+
+# Use progressive mode for gradual adoption
+progressive: false
+
+# Strict mode - fail on warnings
+strict: true
+
+# Set minimum Ansible version
+min_ansible_version: "2.10"
+
+# Configure specific rules
+rules:
+  yaml[line-length]:
+    max: 256
