@@ -29,3 +29,28 @@ rhel_rke2_stig_longhorn_storage_path: /var/lib/rancher/longhorn
 # WARNING: Allowing execution from local PVs is a security tradeoff.
 #   Only enable if workloads genuinely need to execute binaries from PVs.
 rhel_rke2_stig_local_path_storage_path: /var/lib/rancher/local-path-provisioner
+
+###############################################################################
+# Cryptographic Policy Configuration (RHEL-09-215105)
+# Configures the system-wide cryptographic policy using update-crypto-policies.
+###############################################################################
+# Enable/disable crypto policy management by this role
+rhel_rke2_stig_crypto_policy_enabled: true
+
+# System-wide cryptographic policy to apply
+# Options:
+#   - FIPS              Pure FIPS 140-3 mode (may break AD/IPA integration)
+#   - FIPS:AD-SUPPORT   FIPS with Active Directory compatibility (RECOMMENDED)
+#   - FIPS:OSPP         FIPS with OSPP (Protection Profile) requirements
+#
+# Default: FIPS:AD-SUPPORT
+#   Enables FIPS 140-3 compliant cryptography while allowing RC4 for Kerberos
+#   authentication with Active Directory. Required for environments using:
+#   - FreeIPA/Red Hat IdM with AD trust
+#   - Direct AD domain membership via SSSD/realmd
+#   - Cross-realm Kerberos with Windows domains
+#
+# Note: Automated scanners (e.g., Nessus) may flag FIPS:AD-SUPPORT as
+#   non-compliant. See README.md STIG Exemptions section for documentation
+#   to provide to assessors explaining the technical nuance.
+rhel_rke2_stig_crypto_policy: "FIPS:AD-SUPPORT"

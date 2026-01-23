@@ -5,32 +5,84 @@
 # Summary: Verify STIG configurations were applied correctly
 # Last Updated: 23 Jan 2026
 # Classification: UNCLASSIFIED
+#
+# Note: These tests verify FILE DEPLOYMENT and CONTENT, not runtime state.
+#   Container environments (Podman/Docker) do not have full systemd, kernel
+#   module loading, or service management capabilities. We verify that the
+#   role deploys the correct files with correct content and permissions.
 ###############################################################################
 - name: Verify
   hosts: all
   gather_facts: true
   tasks:
     ###########################################################
-    # Verify password policy settings
+    # RHEL-09-611075: Verify PASS_MIN_DAYS (minimum password lifetime)
     ###########################################################
-    - name: Verify PASS_MIN_DAYS is set in login.defs
+    - name: RHEL-09-611075 | Verify PASS_MIN_DAYS is set in login.defs
       ansible.builtin.lineinfile:
         path: /etc/login.defs
         regexp: '^PASS_MIN_DAYS\s+1'
         state: absent
       check_mode: true
       register: pass_min_days
-      failed_when: not pass_min_days.changed  # Fail if line DOESN'T exist
+      failed_when: not pass_min_days.changed
+
+    - name: RHEL-09-611075 | Report PASS_MIN_DAYS status
+      ansible.builtin.debug:
+        msg: "PASS_MIN_DAYS=1 is configured in /etc/login.defs"
 
     ###########################################################
-    # Verify audit rules file exists and has content
+    # RHEL-09-411010: Verify PASS_MAX_DAYS (maximum password lifetime)
     ###########################################################
-    - name: Verify STIG audit rules file exists
+    - name: RHEL-09-411010 | Verify PASS_MAX_DAYS is set in login.defs
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MAX_DAYS\s+60'
+        state: absent
+      check_mode: true
+      register: pass_max_days
+      failed_when: not pass_max_days.changed
+
+    - name: RHEL-09-411010 | Report PASS_MAX_DAYS status
+      ansible.builtin.debug:
+        msg: "PASS_MAX_DAYS=60 is configured in /etc/login.defs"
+
+    ###########################################################
+    # RHEL-09-215105: Verify cryptographic policy
+    # Note: In containers, we verify the policy state file exists and
+    #   contains the expected policy. We cannot verify kernel FIPS mode.
+    ###########################################################
+    - name: RHEL-09-215105 | Check crypto policy state file
+      ansible.builtin.stat:
+        path: /etc/crypto-policies/state/current
+      register: crypto_policy_file
+
+    - name: RHEL-09-215105 | Read current crypto policy
+      ansible.builtin.slurp:
+        src: /etc/crypto-policies/state/current
+      register: crypto_policy_content
+      when: crypto_policy_file.stat.exists
+
+    - name: RHEL-09-215105 | Verify crypto policy is FIPS-based
+      ansible.builtin.assert:
+        that:
+          - crypto_policy_file.stat.exists
+          - "'FIPS' in (crypto_policy_content.content | b64decode)"
+        fail_msg: "Crypto policy is not set to a FIPS-based policy"
+        success_msg: >-
+          Crypto policy is set to:
+          {{ crypto_policy_content.content | b64decode | trim }}
+      when: crypto_policy_file.stat.exists
+
+    ###########################################################
+    # RHEL-09-654xxx: Verify STIG audit rules file
+    ###########################################################
+    - name: RHEL-09-654xxx | Verify STIG audit rules file exists
       ansible.builtin.stat:
         path: /etc/audit/rules.d/20-stig.rules
       register: audit_rules_file
 
-    - name: Assert audit rules file exists
+    - name: RHEL-09-654xxx | Assert audit rules file exists
       ansible.builtin.assert:
         that:
           - audit_rules_file.stat.exists
@@ -38,22 +90,29 @@
         fail_msg: "STIG audit rules file missing or empty"
         success_msg: "STIG audit rules file exists and has content"
 
-    - name: Verify audit rules contain expected entries
+    - name: RHEL-09-654xxx | Verify audit rules contain expected entries
       ansible.builtin.command:
         cmd: grep -c "STIG-ID" /etc/audit/rules.d/20-stig.rules
       register: audit_rules_count
       changed_when: false
       failed_when: audit_rules_count.stdout | int < 50
 
+    - name: RHEL-09-654xxx | Verify audit rules file permissions
+      ansible.builtin.assert:
+        that:
+          - audit_rules_file.stat.mode == '0640'
+        fail_msg: "Audit rules file has incorrect permissions"
+        success_msg: "Audit rules file permissions are correct (0640)"
+
     ###########################################################
-    # Verify kernel module blacklist
+    # RHEL-09-213xxx: Verify kernel module blacklist
     ###########################################################
-    - name: Verify kernel module blacklist file exists
+    - name: RHEL-09-213xxx | Verify kernel module blacklist file exists
       ansible.builtin.stat:
         path: /etc/modprobe.d/blacklist.conf
       register: blacklist_file
 
-    - name: Assert blacklist file exists
+    - name: RHEL-09-213xxx | Assert blacklist file exists
       ansible.builtin.assert:
         that:
           - blacklist_file.stat.exists
@@ -61,26 +120,257 @@
         fail_msg: "Kernel module blacklist file missing or empty"
         success_msg: "Kernel module blacklist file exists and has content"
 
-    - name: Verify blacklist contains required modules
+    - name: RHEL-09-213xxx | Verify blacklist contains required modules
       ansible.builtin.command:
-        cmd: grep -E "^blacklist (atm|can|firewire-core|sctp|tipc|cramfs|usb-storage|bluetooth)" /etc/modprobe.d/blacklist.conf
+        cmd: >-
+          grep -E "^blacklist (atm|can|firewire-core|sctp|tipc|cramfs|usb-storage|bluetooth)"
+          /etc/modprobe.d/blacklist.conf
       register: blacklist_content
       changed_when: false
       failed_when: blacklist_content.stdout_lines | length < 8
 
-    ###########################################################
-    # Verify file permissions
-    ###########################################################
-    - name: Verify audit rules file permissions
-      ansible.builtin.assert:
-        that:
-          - audit_rules_file.stat.mode == '0640'
-        fail_msg: "Audit rules file has incorrect permissions"
-        success_msg: "Audit rules file permissions are correct (0640)"
-
-    - name: Verify blacklist file permissions
+    - name: RHEL-09-213xxx | Verify blacklist file permissions
       ansible.builtin.assert:
         that:
           - blacklist_file.stat.mode == '0644'
         fail_msg: "Blacklist file has incorrect permissions"
         success_msg: "Blacklist file permissions are correct (0644)"
+
+    ###########################################################
+    # RHEL-09-433016: Verify fapolicyd rules for RKE2
+    # Note: fapolicyd may not be installed in container; test conditionally
+    ###########################################################
+    - name: RHEL-09-433016 | Check if fapolicyd rules directory exists
+      ansible.builtin.stat:
+        path: /etc/fapolicyd/rules.d
+      register: fapolicyd_dir
+
+    - name: RHEL-09-433016 | Verify RKE2 fapolicyd rules file exists
+      ansible.builtin.stat:
+        path: /etc/fapolicyd/rules.d/60-rke2.rules
+      register: fapolicyd_rules_file
+      when: fapolicyd_dir.stat.exists
+
+    - name: RHEL-09-433016 | Assert fapolicyd rules file exists
+      ansible.builtin.assert:
+        that:
+          - fapolicyd_rules_file.stat.exists
+          - fapolicyd_rules_file.stat.size > 0
+        fail_msg: "RKE2 fapolicyd rules file missing or empty"
+        success_msg: "RKE2 fapolicyd rules file exists and has content"
+      when: fapolicyd_dir.stat.exists
+
+    - name: RHEL-09-433016 | Verify fapolicyd rules contain Longhorn path
+      ansible.builtin.command:
+        cmd: grep -E "longhorn|rancher" /etc/fapolicyd/rules.d/60-rke2.rules
+      register: fapolicyd_content
+      changed_when: false
+      failed_when: fapolicyd_content.rc != 0
+      when: fapolicyd_dir.stat.exists and fapolicyd_rules_file.stat.exists
+
+    - name: RHEL-09-433016 | Skip fapolicyd test (not installed)
+      ansible.builtin.debug:
+        msg: "fapolicyd not installed in container - skipping verification"
+      when: not fapolicyd_dir.stat.exists
+
+    ###########################################################
+    # RKE2-MODULES: Verify kernel modules configuration
+    # Note: Verifies file deployment only; modules cannot load in container
+    ###########################################################
+    - name: RKE2-MODULES | Verify kernel modules config file exists
+      ansible.builtin.stat:
+        path: /etc/modules-load.d/rke2-modules.conf
+      register: rke2_modules_file
+
+    - name: RKE2-MODULES | Assert kernel modules config exists
+      ansible.builtin.assert:
+        that:
+          - rke2_modules_file.stat.exists
+          - rke2_modules_file.stat.size > 0
+        fail_msg: "RKE2 kernel modules config file missing or empty"
+        success_msg: "RKE2 kernel modules config file exists and has content"
+
+    - name: RKE2-MODULES | Verify required modules are listed
+      ansible.builtin.command:
+        cmd: grep -E "^(br_netfilter|bridge|ip_vs|vxlan)" /etc/modules-load.d/rke2-modules.conf
+      register: rke2_modules_content
+      changed_when: false
+      failed_when: rke2_modules_content.stdout_lines | length < 4
+
+    - name: RKE2-MODULES | Verify file permissions
+      ansible.builtin.assert:
+        that:
+          - rke2_modules_file.stat.mode == '0644'
+        fail_msg: "RKE2 modules config has incorrect permissions"
+        success_msg: "RKE2 modules config permissions are correct (0644)"
+
+    ###########################################################
+    # RKE2-SYSCTL: Verify sysctl configuration
+    # Note: Verifies file deployment only; sysctl values cannot be applied
+    #   in container without privileged mode
+    ###########################################################
+    - name: RKE2-SYSCTL | Verify sysctl config file exists
+      ansible.builtin.stat:
+        path: /etc/sysctl.d/98-rke2.conf
+      register: rke2_sysctl_file
+
+    - name: RKE2-SYSCTL | Assert sysctl config exists
+      ansible.builtin.assert:
+        that:
+          - rke2_sysctl_file.stat.exists
+          - rke2_sysctl_file.stat.size > 0
+        fail_msg: "RKE2 sysctl config file missing or empty"
+        success_msg: "RKE2 sysctl config file exists and has content"
+
+    - name: RKE2-SYSCTL | Verify IP forwarding is enabled in config
+      ansible.builtin.command:
+        cmd: grep -E "^net\.ipv4\.ip_forward\s*=\s*1" /etc/sysctl.d/98-rke2.conf
+      register: sysctl_ip_forward
+      changed_when: false
+      failed_when: sysctl_ip_forward.rc != 0
+
+    - name: RKE2-SYSCTL | Verify bridge netfilter settings in config
+      ansible.builtin.command:
+        cmd: grep -E "^net\.bridge\.bridge-nf-call-iptables\s*=\s*1" /etc/sysctl.d/98-rke2.conf
+      register: sysctl_bridge_nf
+      changed_when: false
+      failed_when: sysctl_bridge_nf.rc != 0
+
+    - name: RKE2-SYSCTL | Verify file permissions
+      ansible.builtin.assert:
+        that:
+          - rke2_sysctl_file.stat.mode == '0644'
+        fail_msg: "RKE2 sysctl config has incorrect permissions"
+        success_msg: "RKE2 sysctl config permissions are correct (0644)"
+
+    ###########################################################
+    # RKE2-NETWORK: Verify NetworkManager CNI configuration
+    # Note: NetworkManager may not be installed in container
+    ###########################################################
+    - name: RKE2-NETWORK | Check if NetworkManager conf.d exists
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/conf.d
+      register: nm_conf_dir
+
+    - name: RKE2-NETWORK | Verify CNI ignore config file exists
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/conf.d/rke2-canal.conf
+      register: nm_cni_file
+      when: nm_conf_dir.stat.exists
+
+    - name: RKE2-NETWORK | Assert CNI ignore config exists
+      ansible.builtin.assert:
+        that:
+          - nm_cni_file.stat.exists
+          - nm_cni_file.stat.size > 0
+        fail_msg: "NetworkManager CNI ignore config missing or empty"
+        success_msg: "NetworkManager CNI ignore config exists and has content"
+      when: nm_conf_dir.stat.exists
+
+    - name: RKE2-NETWORK | Verify config ignores CNI interfaces
+      ansible.builtin.command:
+        cmd: grep -E "^unmanaged-devices|cali|flannel|vxlan" /etc/NetworkManager/conf.d/rke2-canal.conf
+      register: nm_cni_content
+      changed_when: false
+      failed_when: nm_cni_content.rc != 0
+      when: nm_conf_dir.stat.exists and nm_cni_file.stat.exists
+
+    - name: RKE2-NETWORK | Skip NetworkManager test (not installed)
+      ansible.builtin.debug:
+        msg: "NetworkManager not installed in container - skipping verification"
+      when: not nm_conf_dir.stat.exists
+
+    ###########################################################
+    # RKE2-AUDIT: Verify RKE2-specific audit rules
+    ###########################################################
+    - name: RKE2-AUDIT | Verify RKE2 audit rules file exists
+      ansible.builtin.stat:
+        path: /etc/audit/rules.d/10-rke2-server.rules
+      register: rke2_audit_file
+
+    - name: RKE2-AUDIT | Assert RKE2 audit rules file exists
+      ansible.builtin.assert:
+        that:
+          - rke2_audit_file.stat.exists
+          - rke2_audit_file.stat.size > 0
+        fail_msg: "RKE2 audit rules file missing or empty"
+        success_msg: "RKE2 audit rules file exists and has content"
+
+    - name: RKE2-AUDIT | Verify RKE2 paths are audited
+      ansible.builtin.command:
+        cmd: grep -E "/var/lib/rancher|/etc/rancher" /etc/audit/rules.d/10-rke2-server.rules
+      register: rke2_audit_content
+      changed_when: false
+      failed_when: rke2_audit_content.rc != 0
+
+    - name: RKE2-AUDIT | Verify file permissions
+      ansible.builtin.assert:
+        that:
+          - rke2_audit_file.stat.mode == '0640'
+        fail_msg: "RKE2 audit rules file has incorrect permissions"
+        success_msg: "RKE2 audit rules file permissions are correct (0640)"
+
+    ###########################################################
+    # RHEL-09-251015: Verify firewalld is disabled
+    # Note: In containers, systemd may not be fully functional. We verify
+    #   the mask symlink exists rather than querying systemctl.
+    ###########################################################
+    - name: RHEL-09-251015 | Check firewalld mask symlink
+      ansible.builtin.stat:
+        path: /etc/systemd/system/firewalld.service
+      register: firewalld_mask
+
+    - name: RHEL-09-251015 | Verify firewalld is masked
+      ansible.builtin.assert:
+        that:
+          - firewalld_mask.stat.exists
+          - firewalld_mask.stat.islnk
+          - firewalld_mask.stat.lnk_target == '/dev/null'
+        fail_msg: >-
+          firewalld is not properly masked
+          (expected symlink to /dev/null)
+        success_msg: "firewalld is masked (symlink to /dev/null)"
+      when: firewalld_mask.stat.exists
+
+    - name: RHEL-09-251015 | Skip firewalld test (not installed/masked)
+      ansible.builtin.debug:
+        msg: >-
+          firewalld mask not found - service may not be installed in container
+          or was never enabled. This is acceptable for container testing.
+      when: not firewalld_mask.stat.exists
+
+    ###########################################################
+    # Test Summary
+    ###########################################################
+    - name: Display verification summary
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          STIG Verification Complete
+          ============================================
+          Password Policy:
+            - PASS_MIN_DAYS (RHEL-09-611075): Verified
+            - PASS_MAX_DAYS (RHEL-09-411010): Verified
+
+          Cryptographic Policy:
+            - RHEL-09-215105: {{ 'Verified' if crypto_policy_file.stat.exists else 'Skipped (not available in container)' }}
+
+          Audit Rules:
+            - STIG rules (50 findings): Verified
+            - RKE2 rules: Verified
+
+          Kernel Hardening:
+            - Module blacklist (8 modules): Verified
+            - RKE2 modules config: Verified
+            - Sysctl config: Verified
+
+          Application Whitelisting:
+            - fapolicyd rules: {{ 'Verified' if fapolicyd_dir.stat.exists else 'Skipped (not installed)' }}
+
+          Network Configuration:
+            - NetworkManager CNI: {{ 'Verified' if nm_conf_dir.stat.exists else 'Skipped (not installed)' }}
+            - firewalld disabled: {{ 'Verified' if firewalld_mask.stat.exists else 'Skipped (not installed)' }}
+
+          Note: Some tests skipped due to container limitations.
+          Full verification requires testing on a real RHEL system.
+          ============================================

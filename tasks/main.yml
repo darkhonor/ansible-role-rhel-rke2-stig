@@ -39,6 +39,46 @@
     - CAT II
 
 ###########################################################
+# STIG ID: RHEL-09-215105    Group ID: V-258241
+# Rule Title: RHEL 9 must implement a FIPS 140-3-compliant systemwide
+#   cryptographic policy.
+# Severity: CAT II
+# Note: Default policy is FIPS:AD-SUPPORT which maintains FIPS 140-3
+#   compliance while enabling Kerberos interoperability with Active Directory.
+#   The underlying crypto modules remain FIPS-validated; only Kerberos gets
+#   RC4 exception for AD compatibility. See README.md for exemption details.
+# Container Note: In containers without kernel FIPS mode, update-crypto-policies
+#   may return rc=3 even when the policy is set. We check the state file for
+#   idempotence rather than command output.
+###########################################################
+- name: RHEL-09-215105 | Check current cryptographic policy
+  ansible.builtin.slurp:
+    src: /etc/crypto-policies/state/current
+  register: rhel_rke2_stig_crypto_policy_current
+  failed_when: false
+  when: rhel_rke2_stig_crypto_policy_enabled | default(true)
+  tags:
+    - RHEL-09-215105
+    - crypto
+    - CAT II
+
+- name: RHEL-09-215105 | Set system-wide cryptographic policy
+  ansible.builtin.command:
+    cmd: update-crypto-policies --set {{ rhel_rke2_stig_crypto_policy }}
+  register: rhel_rke2_stig_crypto_policy_result
+  changed_when: "'Setting system policy' in rhel_rke2_stig_crypto_policy_result.stdout"
+  failed_when:
+    - rhel_rke2_stig_crypto_policy_result.rc != 0
+    - "'Setting system policy' not in rhel_rke2_stig_crypto_policy_result.stdout"
+  when:
+    - rhel_rke2_stig_crypto_policy_enabled | default(true)
+    - (rhel_rke2_stig_crypto_policy_current.content | default('') | b64decode | trim) != rhel_rke2_stig_crypto_policy
+  tags:
+    - RHEL-09-215105
+    - crypto
+    - CAT II
+
+###########################################################
 # STIG IDs: RHEL-09-654010 through RHEL-09-654255
 # Group IDs: V-258176 through V-258225
 # Rule Title: Deploy all STIG-required audit rules for system call
