@@ -89,6 +89,8 @@ jobs:
 
       - name: Run syntax check
         run: ansible-playbook test-playbook.yml --syntax-check
+        env:
+          ANSIBLE_ROLES_PATH: "${{ github.workspace }}/.."
 
   ###########################################################
   # Molecule Test Stage
