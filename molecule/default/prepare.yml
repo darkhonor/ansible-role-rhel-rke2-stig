@@ -10,17 +10,28 @@
   hosts: all
   gather_facts: true
   tasks:
-    - name: Install required packages for testing
+    - name: Install required packages for testing (UBI9 compatible)
       ansible.builtin.dnf:
         name:
-          - audit
-          - kmod
           - procps-ng
+          - kmod
         state: present
+
+    - name: Check if auditd is available
+      ansible.builtin.command:
+        cmd: which auditd
+      register: auditd_check
+      changed_when: false
+      failed_when: false
+
+    - name: Display auditd status
+      ansible.builtin.debug:
+        msg: "auditd available: {{ auditd_check.rc == 0 }}"
 
     - name: Ensure audit service is available
       ansible.builtin.service:
         name: auditd
         state: started
         enabled: true
+      when: auditd_check.rc == 0
       ignore_errors: true  # May fail in container without full systemd

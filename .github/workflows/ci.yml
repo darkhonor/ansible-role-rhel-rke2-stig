@@ -155,11 +155,10 @@ jobs:
           podman stop test-systemd || true
 
       - name: Run Molecule tests
-        run: molecule --debug test --scenario-name ${{ matrix.scenario }}
+        run: molecule test --scenario-name ${{ matrix.scenario }}
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
-          ANSIBLE_VERBOSITY: '2'
 
   ###########################################################
   # Security Scan Stage
