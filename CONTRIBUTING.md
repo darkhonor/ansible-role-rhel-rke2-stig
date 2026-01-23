@@ -6,6 +6,141 @@ Thank you for your interest in contributing to this STIG compliance role!
 
 Please be respectful and constructive in all interactions.
 
+## Development Environment Setup
+
+### RHEL 9 Python Configuration
+
+RHEL 9 system tools (like `subscription-manager`, `dnf`, etc.) require Python 3.9.
+However, `ansible-core` 2.17+ requires Python 3.10+. To avoid breaking system tools,
+we use a dual-Python setup:
+
+| Command    | Version | Purpose                                    |
+|------------|---------|------------------------------------------- |
+| `python3`  | 3.9.x   | System tools (subscription-manager, dnf)  |
+| `python`   | 3.11.x  | Development tools (ansible, pre-commit)   |
+
+#### Installing Python 3.11 on RHEL 9
+
+```bash
+# Install Python 3.11 from EPEL
+sudo dnf install -y epel-release
+sudo dnf install -y python3.11 python3.11-pip python3.11-devel
+
+# Configure alternatives (keep python3 pointing to 3.9 for system tools)
+sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 3
+sudo alternatives --set python3 /usr/bin/python3.9
+
+# Set python (without the 3) to use 3.11 for development
+sudo alternatives --install /usr/bin/python python /usr/bin/python3.11 2
+sudo alternatives --set python /usr/bin/python3.11
+
+# Verify configuration
+python3 --version   # Should show Python 3.9.x
+python --version    # Should show Python 3.11.x
+```
+
+> **⚠️ WARNING**: Do NOT change `python3` to point to Python 3.11. This will break
+> `subscription-manager`, `dnf`, and other RHEL system tools. Recovery requires
+> manually creating a temporary repo with entitlement certificates to reinstall
+> `subscription-manager`. Don't ask how we know this.
+
+#### Installing Development Dependencies
+
+All Python dependencies are pinned in `requirements.txt` for consistency between
+local development and CI/CD. Choose **one** of the following installation methods:
+
+##### Option A: System-wide Installation (Simpler)
+
+Install tools directly using the `python` (3.11) command:
+
+```bash
+# Upgrade pip first
+python -m pip install --upgrade pip
+
+# Install all dev dependencies from requirements.txt
+python -m pip install -r requirements.txt
+```
+
+##### Option B: Virtual Environment (Isolated)
+
+Use a venv to isolate development dependencies from the system:
+
+```bash
+# Create a virtual environment with Python 3.11
+python3.11 -m venv ~/.venv/ansible-dev
+
+# Add activation alias to your shell (optional convenience)
+echo 'alias ansible-dev="source ~/.venv/ansible-dev/bin/activate"' >> ~/.bashrc
+source ~/.bashrc
+
+# Activate the virtual environment
+source ~/.venv/ansible-dev/bin/activate
+# Or use the alias: ansible-dev
+
+# Install dependencies inside the venv
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Deactivate when done
+deactivate
+```
+
+> **Note**: When using a venv, you must activate it before running any development
+> commands (ansible-lint, molecule, pre-commit, etc.).
+
+##### Verify Installation
+
+Regardless of which method you chose:
+
+```bash
+ansible --version      # Should show Python 3.11.x
+ansible-lint --version
+yamllint --version
+pre-commit --version
+molecule --version
+```
+
+### Pre-commit Hooks
+
+This repository uses pre-commit hooks to ensure code quality before commits:
+
+```bash
+# Install hooks (one-time setup)
+pre-commit install
+
+# Run manually on all files
+pre-commit run --all-files
+
+# Hooks will run automatically on git commit
+```
+
+The following hooks are configured:
+- **yamllint** - YAML syntax and style validation
+- **ansible-lint** - Ansible best practices (production profile)
+- **trailing-whitespace** - Remove trailing whitespace
+- **end-of-file-fixer** - Ensure files end with newline
+- **check-yaml** - Validate YAML syntax
+- **check-added-large-files** - Prevent large files (>500KB)
+- **check-merge-conflict** - Detect merge conflict markers
+- **detect-private-key** - Prevent accidental key commits
+
+### Molecule Testing
+
+Molecule tests require Podman (not Docker) on RHEL:
+
+```bash
+# Install Podman
+sudo dnf install -y podman
+
+# Run full test suite
+molecule test
+
+# Development workflow (faster iteration)
+molecule converge   # Create and apply role
+molecule verify     # Run verification tests
+molecule destroy    # Clean up
+```
+
 ## How to Contribute
 
 ### Reporting Issues
