@@ -75,6 +75,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install ansible-core
 
+      - name: Install required Ansible collections
+        run: ansible-galaxy collection install -r requirements.yml
+
       - name: Create test playbook
         run: |
           cat > test-playbook.yml << 'EOF'
@@ -123,6 +126,9 @@ jobs:
             molecule-plugins[podman] \
             ansible-lint \
             yamllint
+
+      - name: Install required Ansible collections
+        run: ansible-galaxy collection install -r requirements.yml
 
       - name: Install Podman
         run: |
