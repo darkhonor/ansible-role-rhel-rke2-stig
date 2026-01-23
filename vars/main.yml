@@ -1,3 +1,4 @@
+---
 ###############################################################################
 # Filename: vars/main.yml
 # Role: ansible-role-rhel-rke2-stig
@@ -630,4 +631,3 @@ rhel9_rke2_stig_blacklist_modules:
       RHEL 9 Bluetooth must be disabled.
     severity: "CAT II"
     module_name: "bluetooth"
-
