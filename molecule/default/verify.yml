@@ -20,7 +20,7 @@
         state: absent
       check_mode: true
       register: pass_min_days
-      failed_when: pass_min_days.changed
+      failed_when: not pass_min_days.changed  # Fail if line DOESN'T exist
 
     ###########################################################
     # Verify audit rules file exists and has content
