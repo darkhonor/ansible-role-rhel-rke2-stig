@@ -53,6 +53,24 @@
   listen: Reload sysctl
 
 ###############################################################################
+# SSH Handlers - OpenSSH Server Configuration
+###############################################################################
+- name: Check if sshd is running
+  ansible.builtin.command:
+    cmd: systemctl is-active sshd
+  register: sshd_active
+  changed_when: false
+  failed_when: false
+  listen: Restart sshd
+
+- name: Restart sshd service
+  ansible.builtin.systemd:
+    name: sshd
+    state: restarted
+  when: sshd_active.rc == 0
+  listen: Restart sshd
+
+###############################################################################
 # NetworkManager Handlers - CNI Interface Configuration
 ###############################################################################
 - name: Check if NetworkManager is running

@@ -60,7 +60,7 @@ in future releases.*
 
 ## STIG Coverage
 
-This role currently addresses **61 STIG findings**:
+This role currently addresses **64 STIG findings**:
 
 ### Cryptographic Policy (1 finding)
 
@@ -74,6 +74,19 @@ This role currently addresses **61 STIG findings**:
 |---------|----------|-------------|
 | RHEL-09-411010 | CAT II | Maximum password lifetime (60 days) |
 | RHEL-09-611075 | CAT II | Minimum password lifetime (24 hours) |
+
+### SSH Configuration (2 findings)
+
+| STIG ID | Severity | Description |
+|---------|----------|-------------|
+| RHEL-09-255095 | CAT II | SSH ClientAliveCountMax (terminate unresponsive connections) |
+| RHEL-09-255100 | CAT II | SSH ClientAliveInterval (10 minute max idle timeout) |
+
+### NetworkManager Configuration (1 finding)
+
+| STIG ID | Severity | Description |
+|---------|----------|-------------|
+| RHEL-09-252040 | CAT II | Configure DNS processing mode in NetworkManager |
 
 ### Audit Rules (50 findings)
 

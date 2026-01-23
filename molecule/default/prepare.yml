@@ -44,6 +44,7 @@
           - fapolicyd       # Application whitelisting (RHEL-09-433016)
           - NetworkManager  # Network config (for CNI ignore rules)
           - firewalld       # Firewall service (to test disable task)
+          - openssh-server  # SSH server (RHEL-09-255095, RHEL-09-255100)
         state: present
 
     # Note: auditd cannot run in containers (requires kernel audit subsystem)

@@ -54,3 +54,38 @@ rhel_rke2_stig_crypto_policy_enabled: true
 #   non-compliant. See README.md STIG Exemptions section for documentation
 #   to provide to assessors explaining the technical nuance.
 rhel_rke2_stig_crypto_policy: "FIPS:AD-SUPPORT"
+
+###############################################################################
+# SSH Configuration (RHEL-09-255095, RHEL-09-255100)
+# Configures SSH ClientAlive settings to terminate unresponsive sessions.
+###############################################################################
+# Enable/disable SSH hardening by this role
+rhel_rke2_stig_ssh_enabled: true
+
+# ClientAliveCountMax: Number of unresponded keepalive messages before disconnect
+# STIG requires: 1 (session terminates after first missed keepalive)
+rhel_rke2_stig_ssh_client_alive_count_max: 1
+
+# ClientAliveInterval: Seconds between keepalive messages to the client
+# STIG requires: 600 or less (10 minutes maximum idle before disconnect)
+# Note: Total idle timeout = ClientAliveInterval * ClientAliveCountMax
+#   With defaults: 600 * 1 = 600 seconds (10 minutes) max idle time
+rhel_rke2_stig_ssh_client_alive_interval: 600
+
+###############################################################################
+# NetworkManager Configuration (RHEL-09-252040)
+# Configures DNS processing mode in NetworkManager.
+###############################################################################
+# Enable/disable NetworkManager DNS mode configuration by this role
+rhel_rke2_stig_nm_dns_enabled: true
+
+# DNS processing mode for NetworkManager
+# Options:
+#   - default   Use resolv.conf directly (traditional behavior)
+#   - dnsmasq   Use local dnsmasq caching server
+#   - systemd-resolved  Use systemd-resolved for DNS
+#   - none      NetworkManager does not modify resolv.conf
+#
+# Default: 'default' maintains traditional /etc/resolv.conf behavior and
+#   ensures DNS server settings from DHCP/static config are properly applied.
+rhel_rke2_stig_nm_dns_mode: "default"

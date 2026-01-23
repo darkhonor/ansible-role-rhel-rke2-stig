@@ -79,6 +79,99 @@
     - CAT II
 
 ###########################################################
+# STIG ID: RHEL-09-255095    Group ID: V-257995
+# Rule Title: RHEL 9 must be configured so that all network connections
+#   associated with SSH traffic terminate after becoming unresponsive.
+# Severity: CAT II
+# Note: Works in conjunction with ClientAliveInterval (RHEL-09-255100) to
+#   terminate unresponsive sessions.
+###########################################################
+- name: RHEL-09-255095 | Check if sshd_config exists
+  ansible.builtin.stat:
+    path: /etc/ssh/sshd_config
+  register: rhel_rke2_stig_sshd_config_check
+  when: rhel_rke2_stig_ssh_enabled | default(true)
+  tags:
+    - RHEL-09-255095
+    - RHEL-09-255100
+    - ssh
+    - CAT II
+
+- name: RHEL-09-255095 | Set SSH ClientAliveCountMax
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#*\s*ClientAliveCountMax\s+'
+    line: 'ClientAliveCountMax {{ rhel_rke2_stig_ssh_client_alive_count_max }}'
+    state: present
+  notify: Restart sshd
+  when:
+    - rhel_rke2_stig_ssh_enabled | default(true)
+    - rhel_rke2_stig_sshd_config_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-255095
+    - ssh
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-255100    Group ID: V-257996
+# Rule Title: RHEL 9 must be configured so that all network connections
+#   associated with SSH traffic are terminated after 10 minutes of becoming
+#   unresponsive.
+# Severity: CAT II
+# Note: ClientAliveInterval * ClientAliveCountMax = max idle time before
+#   disconnect. With CountMax=1 and Interval=600, session terminates after
+#   10 minutes of unresponsiveness.
+###########################################################
+- name: RHEL-09-255100 | Set SSH ClientAliveInterval
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#*\s*ClientAliveInterval\s+'
+    line: 'ClientAliveInterval {{ rhel_rke2_stig_ssh_client_alive_interval }}'
+    state: present
+  notify: Restart sshd
+  when:
+    - rhel_rke2_stig_ssh_enabled | default(true)
+    - rhel_rke2_stig_sshd_config_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-255100
+    - ssh
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-252040    Group ID: V-257949
+# Rule Title: RHEL 9 must configure a DNS processing mode in Network Manager.
+# Severity: CAT II
+# Note: Common DNS modes are 'default' (use resolv.conf), 'dnsmasq', or
+#   'systemd-resolved'. 'default' maintains traditional DNS resolution behavior.
+###########################################################
+- name: RHEL-09-252040 | Check if NetworkManager is installed
+  ansible.builtin.stat:
+    path: /etc/NetworkManager/NetworkManager.conf
+  register: rhel_rke2_stig_nm_conf_check
+  when: rhel_rke2_stig_nm_dns_enabled | default(true)
+  tags:
+    - RHEL-09-252040
+    - networkmanager
+    - CAT II
+
+- name: RHEL-09-252040 | Configure NetworkManager DNS mode
+  community.general.ini_file:
+    path: /etc/NetworkManager/NetworkManager.conf
+    section: main
+    option: dns
+    value: '{{ rhel_rke2_stig_nm_dns_mode }}'
+    mode: '0644'
+    backup: true
+  notify: Reload NetworkManager
+  when:
+    - rhel_rke2_stig_nm_dns_enabled | default(true)
+    - rhel_rke2_stig_nm_conf_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-252040
+    - networkmanager
+    - CAT II
+
+###########################################################
 # STIG IDs: RHEL-09-654010 through RHEL-09-654255
 # Group IDs: V-258176 through V-258225
 # Rule Title: Deploy all STIG-required audit rules for system call

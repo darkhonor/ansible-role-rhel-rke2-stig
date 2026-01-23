@@ -340,6 +340,77 @@
       when: not firewalld_mask.stat.exists
 
     ###########################################################
+    # RHEL-09-255095: Verify SSH ClientAliveCountMax
+    # Note: Verifies file content only; sshd may not be running in container
+    ###########################################################
+    - name: RHEL-09-255095 | Check if sshd_config exists
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_config_file
+
+    - name: RHEL-09-255095 | Verify ClientAliveCountMax in sshd_config
+      ansible.builtin.command:
+        cmd: grep -E "^ClientAliveCountMax\s+1" /etc/ssh/sshd_config
+      register: ssh_client_alive_count
+      changed_when: false
+      failed_when: ssh_client_alive_count.rc != 0
+      when: sshd_config_file.stat.exists
+
+    - name: RHEL-09-255095 | Report ClientAliveCountMax status
+      ansible.builtin.debug:
+        msg: "ClientAliveCountMax=1 is configured in /etc/ssh/sshd_config"
+      when: sshd_config_file.stat.exists
+
+    ###########################################################
+    # RHEL-09-255100: Verify SSH ClientAliveInterval
+    # Note: Verifies file content only; sshd may not be running in container
+    ###########################################################
+    - name: RHEL-09-255100 | Verify ClientAliveInterval in sshd_config
+      ansible.builtin.command:
+        cmd: grep -E "^ClientAliveInterval\s+600" /etc/ssh/sshd_config
+      register: ssh_client_alive_interval
+      changed_when: false
+      failed_when: ssh_client_alive_interval.rc != 0
+      when: sshd_config_file.stat.exists
+
+    - name: RHEL-09-255100 | Report ClientAliveInterval status
+      ansible.builtin.debug:
+        msg: "ClientAliveInterval=600 is configured in /etc/ssh/sshd_config"
+      when: sshd_config_file.stat.exists
+
+    - name: RHEL-09-255xxx | Skip SSH tests (openssh-server not installed)
+      ansible.builtin.debug:
+        msg: "openssh-server not installed in container - skipping SSH verification"
+      when: not sshd_config_file.stat.exists
+
+    ###########################################################
+    # RHEL-09-252040: Verify NetworkManager DNS mode
+    # Note: NetworkManager may not be installed in container; test conditionally
+    ###########################################################
+    - name: RHEL-09-252040 | Check if NetworkManager.conf exists
+      ansible.builtin.stat:
+        path: /etc/NetworkManager/NetworkManager.conf
+      register: nm_main_conf
+
+    - name: RHEL-09-252040 | Verify DNS mode is configured
+      ansible.builtin.command:
+        cmd: grep -E "^dns\s*=\s*default" /etc/NetworkManager/NetworkManager.conf
+      register: nm_dns_mode
+      changed_when: false
+      failed_when: nm_dns_mode.rc != 0
+      when: nm_main_conf.stat.exists
+
+    - name: RHEL-09-252040 | Report DNS mode status
+      ansible.builtin.debug:
+        msg: "NetworkManager dns=default is configured"
+      when: nm_main_conf.stat.exists
+
+    - name: RHEL-09-252040 | Skip NetworkManager DNS test (not installed)
+      ansible.builtin.debug:
+        msg: "NetworkManager not installed in container - skipping DNS mode verification"
+      when: not nm_main_conf.stat.exists
+
+    ###########################################################
     # Test Summary
     ###########################################################
     - name: Display verification summary
@@ -355,6 +426,10 @@
           Cryptographic Policy:
             - RHEL-09-215105: {{ 'Verified' if crypto_policy_file.stat.exists else 'Skipped (not available in container)' }}
 
+          SSH Configuration:
+            - ClientAliveCountMax (RHEL-09-255095): {{ 'Verified' if sshd_config_file.stat.exists else 'Skipped (not installed)' }}
+            - ClientAliveInterval (RHEL-09-255100): {{ 'Verified' if sshd_config_file.stat.exists else 'Skipped (not installed)' }}
+
           Audit Rules:
             - STIG rules (50 findings): Verified
             - RKE2 rules: Verified
@@ -369,6 +444,7 @@
 
           Network Configuration:
             - NetworkManager CNI: {{ 'Verified' if nm_conf_dir.stat.exists else 'Skipped (not installed)' }}
+            - NetworkManager DNS mode: {{ 'Verified' if nm_main_conf.stat.exists else 'Skipped (not installed)' }}
             - firewalld disabled: {{ 'Verified' if firewalld_mask.stat.exists else 'Skipped (not installed)' }}
 
           Note: Some tests skipped due to container limitations.
