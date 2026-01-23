@@ -38,9 +38,12 @@
     - name: Install required packages for STIG testing
       ansible.builtin.dnf:
         name:
-          - audit          # Provides auditd, /etc/audit/rules.d
-          - procps-ng      # Process utilities
-          - kmod           # Kernel module tools
+          - audit           # Provides auditd, /etc/audit/rules.d
+          - procps-ng       # Process utilities
+          - kmod            # Kernel module tools
+          - fapolicyd       # Application whitelisting (RHEL-09-433016)
+          - NetworkManager  # Network config (for CNI ignore rules)
+          - firewalld       # Firewall service (to test disable task)
         state: present
 
     # Note: auditd cannot run in containers (requires kernel audit subsystem)
