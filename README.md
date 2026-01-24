@@ -3,12 +3,17 @@
 [![CI](https://github.com/darkhonor/ansible-role-rhel-rke2-stig/actions/workflows/ci.yml/badge.svg)](https://github.com/darkhonor/ansible-role-rhel-rke2-stig/actions/workflows/ci.yml)
 [![Ansible Galaxy](https://img.shields.io/badge/galaxy-darkhonor.rhel__rke2__stig-blue.svg)](https://galaxy.ansible.com/darkhonor/rhel_rke2_stig)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![STIG](https://img.shields.io/badge/RHEL%209%20STIG-V2R7-green.svg)](https://public.cyber.mil/stigs/)
+[![RHEL 9 STIG](https://img.shields.io/badge/RHEL%209%20STIG-V2R7-green.svg)](https://public.cyber.mil/stigs/)
+[![RKE2 STIG](https://img.shields.io/badge/RKE2%20STIG-V2R5-green.svg)](https://public.cyber.mil/stigs/)
+[![Container SRG](https://img.shields.io/badge/Container%20SRG-V2R4-green.svg)](https://public.cyber.mil/stigs/)
 
 Supplementary Ansible role for enforcing DISA STIG compliance on RHEL 9/10
 systems running RKE2 or K3S Kubernetes distributions.
 
-**Current STIG Baseline:** RHEL 9 V2R7 (Released: 05 Jan 2026)
+**Current STIG Baselines:**
+- RHEL 9 V2R7 (Released: 05 Jan 2026)
+- RKE2 V2R5 (Released: 05 Jan 2026)
+- Container Platform SRG V2R4 (Released: 28 Oct 2025)
 
 ## Overview
 
@@ -63,7 +68,7 @@ in future releases.*
 
 ## STIG Coverage
 
-This role currently addresses **64 STIG findings**:
+This role currently addresses **66 STIG findings**:
 
 ### Cryptographic Policy (1 finding)
 
@@ -78,10 +83,12 @@ This role currently addresses **64 STIG findings**:
 | RHEL-09-411010 | CAT II | Maximum password lifetime (60 days) |
 | RHEL-09-611075 | CAT II | Minimum password lifetime (24 hours) |
 
-### SSH Configuration (2 findings)
+### SSH Configuration (4 findings)
 
 | STIG ID | Severity | Description |
 |---------|----------|-------------|
+| RHEL-09-255070 | CAT II | SSH client MACs (FIPS 140-3 validated algorithms) |
+| RHEL-09-255075 | CAT II | SSH server MACs (FIPS 140-3 validated algorithms) |
 | RHEL-09-255095 | CAT II | SSH ClientAliveCountMax (terminate unresponsive connections) |
 | RHEL-09-255100 | CAT II | SSH ClientAliveInterval (10 minute max idle timeout) |
 
@@ -835,7 +842,8 @@ Automated testing runs on every push and pull request:
 ## Compliance References
 
 - [RHEL 9 STIG V2R7](https://public.cyber.mil/stigs/) - Primary OS hardening (Released: 05 Jan 2026)
-- [RKE2 STIG V2R4](https://public.cyber.mil/stigs/) - Kubernetes controls
+- [RKE2 STIG V2R5](https://public.cyber.mil/stigs/) - Kubernetes controls (Released: 05 Jan 2026)
+- [Container Platform SRG V2R4](https://public.cyber.mil/stigs/) - Container runtime (Released: 28 Oct 2025)
 - [NIST SP 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final) - Control framework
 - [FIPS 140-2/140-3](https://csrc.nist.gov/projects/cryptographic-module-validation-program) - Cryptographic requirements
 
@@ -859,13 +867,13 @@ guidelines.
 4. Push to the branch (`git push origin feature/new-stig-control`)
 5. Open a Pull Request
 
-## RHEL 9 STIG Release History
+## STIG Release History
 
 This section tracks changes between DISA STIG releases to help identify scanner
 findings from outdated baselines and understand rule evolution. See
 `stigs/TODO.md` for items affected by recent changes.
 
-### V2R6 → V2R7 (January 2026)
+### RHEL 9 STIG: V2R6 → V2R7 (January 2026)
 
 | STIG ID | Change | Category | Description |
 |---------|--------|----------|-------------|
@@ -876,7 +884,7 @@ findings from outdated baselines and understand rule evolution. See
 **53 rules** received check/fix procedure updates (no severity or title changes).
 Key areas updated: kernel module checks, sysctl verification, filesystem permissions.
 
-### V2R5 → V2R6 (October 2025)
+### RHEL 9 STIG: V2R5 → V2R6 (October 2025)
 
 | STIG ID | Change | Category | Description |
 |---------|--------|----------|-------------|
@@ -886,6 +894,32 @@ Key areas updated: kernel module checks, sysctl verification, filesystem permiss
 | RHEL-09-653040 | Modified | CAT II | Title updated (audit log permissions) |
 
 Net change: 449 → 447 rules (2 removed, 0 added).
+
+### RKE2 STIG: V2R4 → V2R5 (January 2026)
+
+| STIG ID | Change | Category | Description |
+|---------|--------|----------|-------------|
+| CNTR-R2-000120 | Removed | CAT I | Insecure port disabled (deprecated) |
+| CNTR-R2-000140 | Removed | CAT I | Insecure bind address (deprecated) |
+| CNTR-R2-001500 | Removed | CAT I | Keystore encryption (deprecated) |
+| CNTR-R2-000520 | Modified | CAT II | Check procedure updated |
+| CNTR-R2-001130 | Modified | CAT II | Check/Fix procedures updated |
+
+Net change: 24 → 21 rules (3 CAT I removed). Significant reduction in critical findings.
+
+### Container Platform SRG: V2R3 → V2R4 (October 2025)
+
+| STIG ID | Change | Category | Description |
+|---------|--------|----------|-------------|
+| SRG-APP-001035-CTR-000323 | Added | CAT I | Platform must be vendor-supported version |
+| SRG-APP-000033-CTR-000090 | Modified | CAT II | Title/Fix updated |
+| SRG-APP-000033-CTR-000095 | Modified | CAT II | Title/Fix updated |
+| SRG-APP-000033-CTR-000100 | Modified | CAT II | Title/Fix updated |
+| SRG-APP-000456-CTR-001125 | Modified | CAT II | Title/Fix updated |
+| SRG-APP-000456-CTR-001130 | Modified | CAT II | Title/Fix updated |
+| SRG-APP-000514-CTR-001315 | Modified | CAT II | Title/Check/Fix updated |
+
+Net change: 187 → 188 rules (1 CAT I added for version support).
 
 ## License
 
