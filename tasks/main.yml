@@ -39,6 +39,178 @@
     - CAT II
 
 ###########################################################
+# STIG ID: RHEL-09-611050    Group ID: V-258099
+# Rule Title: RHEL 9 password-auth must be configured to use a sufficient
+#   number of hashing rounds.
+# Severity: CAT II
+# Note: Uses community.general.pamd to modify PAM configuration safely.
+#   Requires minimum 100000 rounds per STIG.
+###########################################################
+- name: RHEL-09-611050 | Check if password-auth exists
+  ansible.builtin.stat:
+    path: /etc/pam.d/password-auth
+  register: rhel_rke2_stig_password_auth_check
+  when: rhel_rke2_stig_pam_password_enabled | default(true)
+  tags:
+    - RHEL-09-611050
+    - pam
+    - CAT II
+
+- name: RHEL-09-611050 | Configure SHA512 hashing rounds in password-auth
+  community.general.pamd:
+    name: password-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments:
+      - sha512
+      - "rounds={{ rhel_rke2_stig_pam_sha512_rounds }}"
+    state: args_present
+  when:
+    - rhel_rke2_stig_pam_password_enabled | default(true)
+    - rhel_rke2_stig_password_auth_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-611050
+    - pam
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-611055    Group ID: V-258100
+# Rule Title: RHEL 9 system-auth must be configured to use a sufficient
+#   number of hashing rounds.
+# Severity: CAT II
+# Note: Uses community.general.pamd to modify PAM configuration safely.
+#   Requires minimum 100000 rounds per STIG.
+###########################################################
+- name: RHEL-09-611055 | Check if system-auth exists
+  ansible.builtin.stat:
+    path: /etc/pam.d/system-auth
+  register: rhel_rke2_stig_system_auth_check
+  when: rhel_rke2_stig_pam_password_enabled | default(true)
+  tags:
+    - RHEL-09-611055
+    - pam
+    - CAT II
+
+- name: RHEL-09-611055 | Configure SHA512 hashing rounds in system-auth
+  community.general.pamd:
+    name: system-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments:
+      - sha512
+      - "rounds={{ rhel_rke2_stig_pam_sha512_rounds }}"
+    state: args_present
+  when:
+    - rhel_rke2_stig_pam_password_enabled | default(true)
+    - rhel_rke2_stig_system_auth_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-611055
+    - pam
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-611160    Group ID: V-258121
+# Rule Title: RHEL 9 must use the common access card (CAC) smart card driver.
+# Severity: CAT II
+# Note: Configures OpenSC to use the CAC driver for DoD smart cards.
+#   Only enable if your environment uses CAC/PIV authentication.
+###########################################################
+- name: RHEL-09-611160 | Check if opensc-tool is available
+  ansible.builtin.command:
+    cmd: which opensc-tool
+  register: rhel_rke2_stig_opensc_check
+  changed_when: false
+  failed_when: false
+  when: rhel_rke2_stig_smartcard_enabled | default(false)
+  tags:
+    - RHEL-09-611160
+    - smartcard
+    - CAT II
+
+- name: RHEL-09-611160 | Configure CAC smart card driver
+  ansible.builtin.command:
+    cmd: opensc-tool --set-conf-entry app:default:card_drivers:cac
+  register: rhel_rke2_stig_cac_result
+  changed_when: rhel_rke2_stig_cac_result.rc == 0
+  notify: Restart pcscd
+  when:
+    - rhel_rke2_stig_smartcard_enabled | default(false)
+    - rhel_rke2_stig_opensc_check.rc == 0
+  tags:
+    - RHEL-09-611160
+    - smartcard
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-631020    Group ID: V-258133
+# Rule Title: RHEL 9 must prohibit the use of cached authenticators after
+#   one day.
+# Severity: CAT II
+# Note: Sets offline_credentials_expiration in sssd.conf. Only applies when
+#   cache_credentials = true. Configure domain-specific settings as needed.
+###########################################################
+- name: RHEL-09-631020 | Check if sssd.conf exists
+  ansible.builtin.stat:
+    path: /etc/sssd/sssd.conf
+  register: rhel_rke2_stig_sssd_conf_check
+  when: rhel_rke2_stig_sssd_enabled | default(false)
+  tags:
+    - RHEL-09-631020
+    - sssd
+    - CAT II
+
+- name: RHEL-09-631020 | Set offline credentials expiration
+  community.general.ini_file:
+    path: /etc/sssd/sssd.conf
+    section: pam
+    option: offline_credentials_expiration
+    value: "{{ rhel_rke2_stig_sssd_offline_cred_expiration }}"
+    mode: '0600'
+    backup: true
+  notify: Restart sssd
+  when:
+    - rhel_rke2_stig_sssd_enabled | default(false)
+    - rhel_rke2_stig_sssd_conf_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-631020
+    - sssd
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-631015    Group ID: V-258132
+# Rule Title: RHEL 9 must map the authenticated identity to the user or
+#   group account for PKI-based authentication.
+# Severity: CAT II
+# Note: Creates certmap section in sssd.conf for certificate-to-user mapping.
+#   Configuration is highly environment-specific; adjust matchrule and maprule
+#   variables to match your certificate format and directory schema.
+###########################################################
+- name: RHEL-09-631015 | Configure certificate mapping section
+  community.general.ini_file:
+    path: /etc/sssd/sssd.conf
+    section: "certmap/{{ rhel_rke2_stig_sssd_certmap_domain }}/{{ rhel_rke2_stig_sssd_certmap_rule_name }}"
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    mode: '0600'
+    backup: true
+  loop:
+    - { option: 'matchrule', value: '{{ rhel_rke2_stig_sssd_certmap_matchrule }}' }
+    - { option: 'maprule', value: '{{ rhel_rke2_stig_sssd_certmap_maprule }}' }
+    - { option: 'domains', value: '{{ rhel_rke2_stig_sssd_certmap_domain }}' }
+  notify: Restart sssd
+  when:
+    - rhel_rke2_stig_sssd_enabled | default(false)
+    - rhel_rke2_stig_sssd_certmap_enabled | default(false)
+    - rhel_rke2_stig_sssd_conf_check.stat.exists | default(false)
+    - rhel_rke2_stig_sssd_certmap_domain | length > 0
+  tags:
+    - RHEL-09-631015
+    - sssd
+    - CAT II
+
+###########################################################
 # STIG ID: RHEL-09-215105    Group ID: V-258241
 # Rule Title: RHEL 9 must implement a FIPS 140-3-compliant systemwide
 #   cryptographic policy.

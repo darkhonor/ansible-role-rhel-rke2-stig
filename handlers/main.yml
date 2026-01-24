@@ -87,3 +87,39 @@
   changed_when: true
   when: networkmanager_active.rc == 0
   listen: Reload NetworkManager
+
+###############################################################################
+# SSSD Handlers - System Security Services Daemon
+###############################################################################
+- name: Check if sssd is running
+  ansible.builtin.command:
+    cmd: systemctl is-active sssd
+  register: sssd_active
+  changed_when: false
+  failed_when: false
+  listen: Restart sssd
+
+- name: Restart sssd service
+  ansible.builtin.systemd:
+    name: sssd
+    state: restarted
+  when: sssd_active.rc == 0
+  listen: Restart sssd
+
+###############################################################################
+# PC/SC Smart Card Handlers - Smart Card Daemon
+###############################################################################
+- name: Check if pcscd is running
+  ansible.builtin.command:
+    cmd: systemctl is-active pcscd
+  register: pcscd_active
+  changed_when: false
+  failed_when: false
+  listen: Restart pcscd
+
+- name: Restart pcscd service
+  ansible.builtin.systemd:
+    name: pcscd
+    state: restarted
+  when: pcscd_active.rc == 0
+  listen: Restart pcscd

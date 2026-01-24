@@ -103,3 +103,60 @@ rhel_rke2_stig_nm_dns_mode: "default"
 #   - Workloads using rootless containers
 #   - Nested container scenarios
 rhel_rke2_stig_user_namespaces_max: 15000
+
+###############################################################################
+# Password Hashing Configuration (RHEL-09-611050, RHEL-09-611055)
+# Configures SHA512 hashing rounds for password-auth and system-auth.
+###############################################################################
+# Enable/disable PAM password hashing configuration by this role
+rhel_rke2_stig_pam_password_enabled: true
+
+# Number of SHA512 hashing rounds for password storage
+# STIG requires: minimum 100000 rounds
+# Higher values increase security but also CPU time for password operations
+rhel_rke2_stig_pam_sha512_rounds: 100000
+
+###############################################################################
+# Smart Card / CAC Configuration (RHEL-09-611160)
+# Configures OpenSC to use the DoD Common Access Card (CAC) driver.
+###############################################################################
+# Enable/disable CAC smart card driver configuration
+# Default: false (not all environments use CAC/PIV smart cards)
+# Set to true if your environment requires smart card authentication
+rhel_rke2_stig_smartcard_enabled: false
+
+###############################################################################
+# SSSD Configuration (RHEL-09-631015, RHEL-09-631020)
+# Configures certificate mapping and cached credential expiration.
+###############################################################################
+# Enable/disable SSSD configuration by this role
+# Default: false (SSSD configuration is environment-specific)
+rhel_rke2_stig_sssd_enabled: false
+
+# Offline credentials expiration in days (RHEL-09-631020)
+# STIG requires: 1 day maximum
+# Note: Only applies when cache_credentials = true in sssd.conf
+rhel_rke2_stig_sssd_offline_cred_expiration: 1
+
+# Certificate mapping configuration (RHEL-09-631015)
+# Enable/disable certificate mapping in SSSD
+# Default: false (requires environment-specific configuration)
+rhel_rke2_stig_sssd_certmap_enabled: false
+
+# Domain name for certificate mapping (e.g., "example.mil")
+# This must match your SSSD domain configuration
+rhel_rke2_stig_sssd_certmap_domain: ""
+
+# Certificate mapping rule name
+rhel_rke2_stig_sssd_certmap_rule_name: "cac_mapping"
+
+# Match rule for certificate Subject Alternative Name (SAN)
+# Example for DoD CAC: "<SAN>.*EDIPI@mil"
+# Adjust regex pattern to match your certificate format
+rhel_rke2_stig_sssd_certmap_matchrule: "<SAN>.*EDIPI@mil"
+
+# Map rule to locate user account from certificate
+# Common options:
+#   - (userCertificate;binary={cert!bin})  - Match full certificate in LDAP
+#   - (altSecurityIdentities={subject_dn}) - Match by subject DN
+rhel_rke2_stig_sssd_certmap_maprule: "(userCertificate;binary={cert!bin})"

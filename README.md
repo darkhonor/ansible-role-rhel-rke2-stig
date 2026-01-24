@@ -68,7 +68,7 @@ in future releases.*
 
 ## STIG Coverage
 
-This role currently addresses **70 STIG findings**:
+This role currently addresses **75 STIG findings**:
 
 ### Cryptographic Policy (1 finding)
 
@@ -76,11 +76,13 @@ This role currently addresses **70 STIG findings**:
 |---------|----------|-------------|
 | RHEL-09-215105 | CAT II | FIPS 140-3 compliant cryptographic policy (configurable) |
 
-### Password Policy (2 findings)
+### Password Policy (4 findings)
 
 | STIG ID | Severity | Description |
 |---------|----------|-------------|
 | RHEL-09-411010 | CAT II | Maximum password lifetime (60 days) |
+| RHEL-09-611050 | CAT II | PAM password-auth SHA512 hashing rounds (configurable) |
+| RHEL-09-611055 | CAT II | PAM system-auth SHA512 hashing rounds (configurable) |
 | RHEL-09-611075 | CAT II | Minimum password lifetime (24 hours) |
 
 ### SSH Configuration (5 findings)
@@ -98,6 +100,18 @@ This role currently addresses **70 STIG findings**:
 | STIG ID | Severity | Description |
 |---------|----------|-------------|
 | RHEL-09-252040 | CAT II | Configure DNS processing mode in NetworkManager |
+
+### Smart Card / PKI Configuration (3 findings)
+
+| STIG ID | Severity | Description |
+|---------|----------|-------------|
+| RHEL-09-611160 | CAT II | CAC smart card driver configuration (disabled by default) |
+| RHEL-09-631015 | CAT II | SSSD certificate-to-user mapping (disabled by default) |
+| RHEL-09-631020 | CAT II | SSSD offline credentials expiration (1 day) |
+
+> **Note:** Smart Card and SSSD features are disabled by default as they require
+> environment-specific configuration. Enable via `rhel_rke2_stig_smartcard_enabled`
+> and `rhel_rke2_stig_sssd_enabled` variables. See [Role Variables](#role-variables).
 
 ### Audit Rules (50 findings)
 
