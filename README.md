@@ -68,7 +68,7 @@ in future releases.*
 
 ## STIG Coverage
 
-This role currently addresses **75 STIG findings**:
+This role currently addresses **81 STIG findings**:
 
 ### Cryptographic Policy (1 finding)
 
@@ -112,6 +112,32 @@ This role currently addresses **75 STIG findings**:
 > **Note:** Smart Card and SSSD features are disabled by default as they require
 > environment-specific configuration. Enable via `rhel_rke2_stig_smartcard_enabled`
 > and `rhel_rke2_stig_sssd_enabled` variables. See [Role Variables](#role-variables).
+
+### File Permissions (5 findings)
+
+| STIG ID | Severity | Description |
+|---------|----------|-------------|
+| RHEL-09-232040 | CAT II | Reset cron configuration permissions to RPM defaults |
+| RHEL-09-232045 | CAT II | Local initialization files mode 0740 (disabled by default) |
+| RHEL-09-232245 | CAT II | Set sticky bit on world-writable directories |
+| RHEL-09-232250 | CAT II | Ensure files have valid group owner (disabled by default) |
+| RHEL-09-232255 | CAT II | Ensure files have valid owner (disabled by default) |
+
+> **Note:** RHEL-09-232045 (init files), RHEL-09-232250, and RHEL-09-232255 (orphaned
+> files) are disabled by default as auto-remediation can break user environments or
+> applications. Enable after manual review of your environment.
+>
+> **RKE2/K3S Exclusion:** The orphaned file checks automatically exclude the path
+> defined in `rhel_rke2_stig_rancher_base_path` (default: `/var/lib/rancher`) because
+> container files use UIDs/GIDs that don't map to host users. See
+> [STIG Exemptions](#rhel-09-232250--rhel-09-232255-orphaned-files-in-container-paths)
+> for assessor documentation.
+
+### Mail Configuration (1 finding)
+
+| STIG ID | Severity | Description |
+|---------|----------|-------------|
+| RHEL-09-252050 | CAT II | Configure postfix to prevent unrestricted mail relaying |
 
 ### Audit Rules (50 findings)
 
@@ -169,6 +195,8 @@ System Security Officer (ISSO) and documented in the System Security Plan (SSP).
 | STIG ID | Group ID | Severity | Rule Title | Justification |
 |---------|----------|----------|------------|---------------|
 | [RHEL-09-213105](#rhel-09-213105-user-namespaces) | V-257816 | CAT II | User namespaces must be disabled | Required for container UID isolation |
+| [RHEL-09-232250](#rhel-09-232250--rhel-09-232255-orphaned-files-in-container-paths) | V-257930 | CAT II | Files must have valid group owner | Container UIDs/GIDs in /var/lib/rancher |
+| [RHEL-09-232255](#rhel-09-232250--rhel-09-232255-orphaned-files-in-container-paths) | V-257931 | CAT II | Files must have valid owner | Container UIDs/GIDs in /var/lib/rancher |
 | [RHEL-09-253075](#rhel-09-253075-ipv4-packet-forwarding) | V-257970 | CAT II | IPv4 packet forwarding must be disabled | Required for Kubernetes pod networking |
 | [RHEL-09-251015](#rhel-09-251015--rhel-09-251020-firewalld-service) | V-257936 | CAT II | firewalld service must be active | RKE2 iptables conflicts with firewalld |
 | [RHEL-09-251020](#rhel-09-251015--rhel-09-251020-firewalld-service) | V-257937 | CAT II | Firewall deny-all policy required | Consequent to RHEL-09-251015 |
@@ -273,6 +301,197 @@ Compensating Controls:
 
 Risk Assessment: Low. User namespaces are a defense-in-depth security control.
 Enabling them improves container isolation rather than creating vulnerability.
+
+Risk Acceptance: [ISSO Signature and Date]
+```
+
+---
+
+### RHEL-09-232250 / RHEL-09-232255: Orphaned Files in Container Paths
+
+| Field | Value |
+|-------|-------|
+| **STIG ID** | RHEL-09-232250 |
+| **Group ID** | V-257930 |
+| **Severity** | CAT II (Medium) |
+| **Rule Title** | All RHEL 9 local files and directories must have a valid group owner |
+| **Status** | EXEMPTION REQUIRED (for /var/lib/rancher path) |
+
+| Field | Value |
+|-------|-------|
+| **STIG ID** | RHEL-09-232255 |
+| **Group ID** | V-257931 |
+| **Severity** | CAT II (Medium) |
+| **Rule Title** | All RHEL 9 local files and directories must have a valid owner |
+| **Status** | EXEMPTION REQUIRED (for /var/lib/rancher path) |
+
+#### STIG Requirement
+
+These STIGs require all files on the system to have valid owner and group owner
+entries that exist in `/etc/passwd` and `/etc/group` respectively. Automated
+scanners flag files without matching local user/group entries.
+
+#### This Role's Behavior
+
+This role **excludes** the following paths from orphaned file checks:
+
+1. **Container Data** (`rhel_rke2_stig_rancher_base_path`): Always excluded
+   (default: `/var/lib/rancher`)
+
+2. **Domain User Homes** (`rhel_rke2_stig_domain_home_path`): Excluded when
+   `rhel_rke2_stig_sssd_enabled: true` (example: `/home/contoso.com`)
+
+When the optional remediation is enabled (`rhel_rke2_stig_orphan_files_enabled:
+true`), the role will find and fix orphaned files on the rest of the system but
+intentionally skip paths where non-local UIDs/GIDs are expected.
+
+#### Justification
+
+Files under the excluded paths contain UIDs and GIDs that **intentionally do
+not exist in local `/etc/passwd` and `/etc/group`**. This is a security feature,
+not a misconfiguration:
+
+1. **User Namespace Isolation**: Containers run with mapped UIDs (e.g., UID
+   100000-165535) that provide isolation from host users. These UIDs appear as
+   "orphaned" because they don't exist in `/etc/passwd` - by design.
+
+2. **Container Image UIDs**: Container images define their own users (e.g.,
+   `nginx` user, `postgres` user) with UIDs that differ from host system users.
+   These are baked into the container image and managed by the container runtime.
+
+3. **Kubernetes Data Directories**: The following paths contain container data:
+   - `/var/lib/rancher/rke2` - RKE2 Kubernetes data and containerd layers
+   - `/var/lib/rancher/k3s` - K3S Kubernetes data and containerd layers
+   - `/var/lib/rancher/longhorn` - Longhorn CSI persistent volume data
+   - `/var/lib/rancher/local-path-provisioner` - Local-path PV data
+
+4. **Domain User Home Directories**: When systems are joined to Active Directory
+   or FreeIPA, user home directories (e.g., `/home/contoso.com/jsmith`) are
+   owned by UIDs from the directory service. These UIDs are resolved via SSSD
+   at runtime but don't exist in local `/etc/passwd`.
+
+5. **Remediating Would Break Systems**: Changing ownership to `root:root` would:
+   - Break running containers and corrupt persistent volumes
+   - Lock domain users out of their home directories
+   - Cause application failures for any process expecting specific ownership
+
+#### Automated Scanner Considerations
+
+**Nessus, SCAP, and OpenSCAP scanners** will flag files under `/var/lib/rancher`
+and domain user home directories as findings for RHEL-09-232250 and
+RHEL-09-232255. These are **false positives** for Kubernetes environments with
+directory service integration. Provide assessors with this documentation.
+
+#### Verification Commands for Assessors
+
+```bash
+# Show that files under /var/lib/rancher have container UIDs
+find /var/lib/rancher -maxdepth 3 -nouser -o -nogroup 2>/dev/null | head -20
+
+# Show domain user home directory ownership (UIDs from AD/IPA)
+ls -ln /home/contoso.com/ 2>/dev/null | head -10
+
+# Show the UID range used by user namespaces (if enabled)
+cat /proc/sys/kernel/overflowuid
+
+# Verify SSSD is resolving directory users
+getent passwd $(ls /home/contoso.com/ 2>/dev/null | head -1) 2>/dev/null
+
+# Verify the rest of the system has no orphaned files (excluding known paths)
+find / -xdev -path /var/lib/rancher -prune -o -path /home/contoso.com -prune \
+  -o \( -nouser -o -nogroup \) -print 2>/dev/null
+```
+
+#### Impact Assessment
+
+| Aspect | Assessment |
+|--------|------------|
+| **Risk Level** | Low |
+| **Attack Vector** | None - container UIDs provide security isolation |
+| **Compensating Controls** | See below |
+
+#### Compensating Controls
+
+1. **User Namespaces**: Container UIDs are mapped to unprivileged host UID
+   ranges, preventing container breakout from gaining host privileges
+2. **SELinux Enforcement**: Mandatory access control restricts container access
+   regardless of UID
+3. **Read-Only Root Filesystem**: Many containers run with read-only root
+   filesystems, limiting what can be modified
+4. **Kubernetes RBAC**: Access to persistent volumes is controlled by Kubernetes
+   PersistentVolumeClaim bindings
+5. **seccomp Profiles**: Restrict syscalls available to containers
+6. **SSSD UID Resolution**: Domain user UIDs are resolved at runtime via SSSD,
+   providing centralized identity management and audit trails
+
+#### Remediation Path
+
+| Condition | Action |
+|-----------|--------|
+| **If node is decommissioned** | Run `find / -nouser -o -nogroup` after removing from cluster and leaving domain |
+| **Container path differs** | Set `rhel_rke2_stig_rancher_base_path` to match your deployment |
+| **Domain home path differs** | Set `rhel_rke2_stig_domain_home_path` to match your AD/IPA realm |
+
+#### Configuration
+
+Override the exclusion paths in your playbook or inventory:
+
+```yaml
+# Container data exclusion path (always excluded)
+rhel_rke2_stig_rancher_base_path: /var/lib/rancher
+
+# Domain user home directory exclusion (excluded when SSSD enabled)
+rhel_rke2_stig_sssd_enabled: true
+rhel_rke2_stig_domain_home_path: "/home/contoso.com"
+
+# Enable orphan file remediation (excludes above paths)
+rhel_rke2_stig_orphan_files_enabled: true
+```
+
+#### Documentation Template for ISSO
+
+```
+STIG Exemption Request
+
+System: [System Name]
+STIG IDs: RHEL-09-232250, RHEL-09-232255
+Controls: Valid File Owner, Valid Group Owner
+
+Operational Requirement: The system is a Kubernetes (RKE2/K3S) node joined to
+Active Directory/FreeIPA. Two categories of files have UIDs/GIDs that do not
+exist in local /etc/passwd and /etc/group:
+
+1. Container Data (/var/lib/rancher): Container filesystems use mapped UIDs
+   from user namespace isolation. This is a security feature that prevents
+   container breakout by mapping container root to unprivileged host UIDs.
+
+2. Domain User Homes (/home/<DOMAIN>): User home directories are owned by
+   UIDs from Active Directory/FreeIPA. These UIDs are resolved at runtime
+   via SSSD but don't exist in local passwd files.
+
+Scope of Exemption:
+- /var/lib/rancher directory tree (container data)
+- /home/<DOMAIN> directory tree (domain user homes, if SSSD enabled)
+All other paths are checked and remediated per STIG requirements.
+
+Security Rationale:
+- Container UIDs that don't exist on the host provide BETTER security through
+  isolation. Remediating would break container isolation and corrupt workloads.
+- Domain user UIDs are managed centrally in AD/IPA with proper access controls.
+  Remediating would lock users out of their home directories.
+
+Compensating Controls:
+- User namespaces map container UIDs to unprivileged host ranges
+- SELinux enforcing mode provides mandatory access control
+- Kubernetes RBAC controls access to persistent volumes
+- seccomp profiles restrict container syscalls
+- SSSD provides centralized identity management with audit logging
+- AD/IPA group policies enforce access controls on domain users
+
+Risk Assessment: Low. Non-local UIDs in excluded paths are security features:
+- Container UIDs provide isolation (not a vulnerability)
+- Domain UIDs are managed centrally with proper access controls
+All other system paths are checked and remediated per STIG requirements.
 
 Risk Acceptance: [ISSO Signature and Date]
 ```

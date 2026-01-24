@@ -314,6 +314,301 @@
     - CAT II
 
 ###########################################################
+# STIG ID: RHEL-09-232040    Group ID: V-257888
+# Rule Title: RHEL 9 permissions of cron configuration files and directories
+#   must not be modified from the operating system defaults.
+# Severity: CAT II
+# Note: Uses rpm --setperms and --setugids to restore factory permissions
+#   for cronie and crontabs packages.
+###########################################################
+- name: RHEL-09-232040 | Check if cronie package is installed
+  ansible.builtin.command:
+    cmd: rpm -q cronie
+  register: rhel_rke2_stig_cronie_check
+  changed_when: false
+  failed_when: false
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_cron_permissions_enabled | default(true)
+  tags:
+    - RHEL-09-232040
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232040 | Reset cronie file permissions to defaults
+  ansible.builtin.command:
+    cmd: rpm --setperms cronie
+  register: rhel_rke2_stig_cronie_perms
+  changed_when: rhel_rke2_stig_cronie_perms.rc == 0
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_cron_permissions_enabled | default(true)
+    - rhel_rke2_stig_cronie_check.rc == 0
+  tags:
+    - RHEL-09-232040
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232040 | Reset cronie file ownership to defaults
+  ansible.builtin.command:
+    cmd: rpm --setugids cronie
+  register: rhel_rke2_stig_cronie_ugids
+  changed_when: rhel_rke2_stig_cronie_ugids.rc == 0
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_cron_permissions_enabled | default(true)
+    - rhel_rke2_stig_cronie_check.rc == 0
+  tags:
+    - RHEL-09-232040
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232040 | Check if crontabs package is installed
+  ansible.builtin.command:
+    cmd: rpm -q crontabs
+  register: rhel_rke2_stig_crontabs_check
+  changed_when: false
+  failed_when: false
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_cron_permissions_enabled | default(true)
+  tags:
+    - RHEL-09-232040
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232040 | Reset crontabs file permissions to defaults
+  ansible.builtin.command:
+    cmd: rpm --setperms crontabs
+  register: rhel_rke2_stig_crontabs_perms
+  changed_when: rhel_rke2_stig_crontabs_perms.rc == 0
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_cron_permissions_enabled | default(true)
+    - rhel_rke2_stig_crontabs_check.rc == 0
+  tags:
+    - RHEL-09-232040
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232040 | Reset crontabs file ownership to defaults
+  ansible.builtin.command:
+    cmd: rpm --setugids crontabs
+  register: rhel_rke2_stig_crontabs_ugids
+  changed_when: rhel_rke2_stig_crontabs_ugids.rc == 0
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_cron_permissions_enabled | default(true)
+    - rhel_rke2_stig_crontabs_check.rc == 0
+  tags:
+    - RHEL-09-232040
+    - permissions
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-232245    Group ID: V-257929
+# Rule Title: A sticky bit must be set on all RHEL 9 public directories.
+# Severity: CAT II
+# Note: Finds world-writable directories without sticky bit and sets it.
+#   This prevents users from deleting files owned by others.
+###########################################################
+- name: RHEL-09-232245 | Find world-writable directories without sticky bit
+  ansible.builtin.shell:
+    cmd: find / -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null || true
+  register: rhel_rke2_stig_sticky_bit_dirs
+  changed_when: false
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_sticky_bit_enabled | default(true)
+  tags:
+    - RHEL-09-232245
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232245 | Set sticky bit on world-writable directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: "o+t"
+  loop: "{{ rhel_rke2_stig_sticky_bit_dirs.stdout_lines | default([]) }}"
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_sticky_bit_enabled | default(true)
+    - rhel_rke2_stig_sticky_bit_dirs.stdout_lines | default([]) | length > 0
+  tags:
+    - RHEL-09-232245
+    - permissions
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-232045    Group ID: V-257889
+# Rule Title: All RHEL 9 local initialization files must have mode 0740 or
+#   less permissive.
+# Severity: CAT II
+# WARNING: Disabled by default - modifying user dotfiles can break
+#   environments. Enable only after verifying impact.
+###########################################################
+- name: RHEL-09-232045 | Find overly permissive initialization files
+  ansible.builtin.shell:
+    cmd: |
+      for dir in /home/*; do
+        if [ -d "$dir" ]; then
+          find "$dir" -maxdepth 1 -name ".*" -type f -perm /037 2>/dev/null
+        fi
+      done
+  register: rhel_rke2_stig_init_files
+  changed_when: false
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_init_files_enabled | default(false)
+  tags:
+    - RHEL-09-232045
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232045 | Restrict initialization files to mode 0740
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: "0740"
+  loop: "{{ rhel_rke2_stig_init_files.stdout_lines | default([]) }}"
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_init_files_enabled | default(false)
+    - rhel_rke2_stig_init_files.stdout_lines | default([]) | length > 0
+  tags:
+    - RHEL-09-232045
+    - permissions
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-232250    Group ID: V-257930
+# Rule Title: All RHEL 9 local files and directories must have a valid
+#   group owner.
+# Severity: CAT II
+# WARNING: Disabled by default - auto-remediation can cause application
+#   failures. Enable only after manual review.
+# Note: Excludes rhel_rke2_stig_rancher_base_path because container files
+#   use UIDs/GIDs that don't map to host users. When SSSD is enabled, also
+#   excludes rhel_rke2_stig_domain_home_path for AD/IPA user home dirs.
+#   See README.md exemption documentation.
+###########################################################
+- name: RHEL-09-232250 | Find files without valid group owner
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      find / -xdev
+      -path {{ rhel_rke2_stig_rancher_base_path }} -prune -o
+      {% if rhel_rke2_stig_sssd_enabled | default(false) and rhel_rke2_stig_domain_home_path | default('') | length > 0 %}
+      -path {{ rhel_rke2_stig_domain_home_path }} -prune -o
+      {% endif %}
+      -nogroup -print 2>/dev/null |
+      head -100 || true
+    executable: /bin/bash
+  register: rhel_rke2_stig_nogroup_files
+  changed_when: false
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_orphan_files_enabled | default(false)
+  tags:
+    - RHEL-09-232250
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232250 | Assign root group to orphaned files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    group: root
+  loop: "{{ rhel_rke2_stig_nogroup_files.stdout_lines | default([]) }}"
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_orphan_files_enabled | default(false)
+    - rhel_rke2_stig_nogroup_files.stdout_lines | default([]) | length > 0
+  tags:
+    - RHEL-09-232250
+    - permissions
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-232255    Group ID: V-257931
+# Rule Title: All RHEL 9 local files and directories must have a valid
+#   owner.
+# Severity: CAT II
+# WARNING: Disabled by default - auto-remediation can cause application
+#   failures. Enable only after manual review.
+# Note: Excludes rhel_rke2_stig_rancher_base_path because container files
+#   use UIDs/GIDs that don't map to host users. When SSSD is enabled, also
+#   excludes rhel_rke2_stig_domain_home_path for AD/IPA user home dirs.
+#   See README.md exemption documentation.
+###########################################################
+- name: RHEL-09-232255 | Find files without valid owner
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail &&
+      find / -xdev
+      -path {{ rhel_rke2_stig_rancher_base_path }} -prune -o
+      {% if rhel_rke2_stig_sssd_enabled | default(false) and rhel_rke2_stig_domain_home_path | default('') | length > 0 %}
+      -path {{ rhel_rke2_stig_domain_home_path }} -prune -o
+      {% endif %}
+      -nouser -print 2>/dev/null |
+      head -100 || true
+    executable: /bin/bash
+  register: rhel_rke2_stig_nouser_files
+  changed_when: false
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_orphan_files_enabled | default(false)
+  tags:
+    - RHEL-09-232255
+    - permissions
+    - CAT II
+
+- name: RHEL-09-232255 | Assign root owner to orphaned files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: root
+  loop: "{{ rhel_rke2_stig_nouser_files.stdout_lines | default([]) }}"
+  when:
+    - rhel_rke2_stig_file_permissions_enabled | default(true)
+    - rhel_rke2_stig_orphan_files_enabled | default(false)
+    - rhel_rke2_stig_nouser_files.stdout_lines | default([]) | length > 0
+  tags:
+    - RHEL-09-232255
+    - permissions
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-252050    Group ID: V-257951
+# Rule Title: RHEL 9 must be configured to prevent unrestricted mail
+#   relaying.
+# Severity: CAT II
+# Note: Configures postfix smtpd_client_restrictions if postfix is installed.
+###########################################################
+- name: RHEL-09-252050 | Check if postfix is installed
+  ansible.builtin.command:
+    cmd: rpm -q postfix
+  register: rhel_rke2_stig_postfix_check
+  changed_when: false
+  failed_when: false
+  when: rhel_rke2_stig_postfix_enabled | default(true)
+  tags:
+    - RHEL-09-252050
+    - mail
+    - CAT II
+
+- name: RHEL-09-252050 | Configure postfix to prevent mail relay
+  ansible.builtin.command:
+    cmd: "postconf -e 'smtpd_client_restrictions={{ rhel_rke2_stig_postfix_client_restrictions }}'"
+  register: rhel_rke2_stig_postfix_result
+  changed_when: rhel_rke2_stig_postfix_result.rc == 0
+  notify: Reload postfix
+  when:
+    - rhel_rke2_stig_postfix_enabled | default(true)
+    - rhel_rke2_stig_postfix_check.rc == 0
+  tags:
+    - RHEL-09-252050
+    - mail
+    - CAT II
+
+###########################################################
 # STIG ID: RHEL-09-255095    Group ID: V-257995
 # Rule Title: RHEL 9 must be configured so that all network connections
 #   associated with SSH traffic terminate after becoming unresponsive.

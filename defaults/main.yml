@@ -30,6 +30,18 @@ rhel_rke2_stig_longhorn_storage_path: /var/lib/rancher/longhorn
 #   Only enable if workloads genuinely need to execute binaries from PVs.
 rhel_rke2_stig_local_path_storage_path: /var/lib/rancher/local-path-provisioner
 
+# RKE2/K3S base storage path - parent directory for all Rancher components
+# Default: /var/lib/rancher
+# This path is excluded from orphaned file checks (RHEL-09-232250, RHEL-09-232255)
+#   because container files use UIDs/GIDs that don't map to host system users.
+#   This is expected Kubernetes behavior, not a security issue.
+# Contents include:
+#   - /var/lib/rancher/rke2 or /var/lib/rancher/k3s (Kubernetes data)
+#   - /var/lib/rancher/longhorn (Longhorn CSI volumes)
+#   - /var/lib/rancher/local-path-provisioner (local-path PVs)
+#   - Container overlay filesystems with non-host UIDs/GIDs
+rhel_rke2_stig_rancher_base_path: /var/lib/rancher
+
 ###############################################################################
 # Cryptographic Policy Configuration (RHEL-09-215105)
 # Configures the system-wide cryptographic policy using update-crypto-policies.
@@ -133,6 +145,19 @@ rhel_rke2_stig_smartcard_enabled: false
 # Default: false (SSSD configuration is environment-specific)
 rhel_rke2_stig_sssd_enabled: false
 
+# Domain home directory path for AD/IPA users
+# When rhel_rke2_stig_sssd_enabled is true, this path is excluded from orphaned
+#   file checks (RHEL-09-232250, RHEL-09-232255) because domain user UIDs/GIDs
+#   come from the directory service, not local /etc/passwd and /etc/group.
+# Format: /home/<DOMAIN> where DOMAIN matches your AD/IPA realm
+# Examples:
+#   - /home/contoso.com (AD domain)
+#   - /home/MPE.local (AD domain with .local suffix)
+#   - /home/ipa.example.com (FreeIPA domain)
+# Leave empty if domain users don't have local home directories or if home
+#   directories use a different path structure.
+rhel_rke2_stig_domain_home_path: "/home/contoso.com"
+
 # Offline credentials expiration in days (RHEL-09-631020)
 # STIG requires: 1 day maximum
 # Note: Only applies when cache_credentials = true in sssd.conf
@@ -160,3 +185,44 @@ rhel_rke2_stig_sssd_certmap_matchrule: "<SAN>.*EDIPI@mil"
 #   - (userCertificate;binary={cert!bin})  - Match full certificate in LDAP
 #   - (altSecurityIdentities={subject_dn}) - Match by subject DN
 rhel_rke2_stig_sssd_certmap_maprule: "(userCertificate;binary={cert!bin})"
+
+###############################################################################
+# File Permissions Configuration (RHEL-09-232040, 232045, 232245, 232250, 232255)
+# Configures file and directory permissions per STIG requirements.
+###############################################################################
+# Enable/disable file permissions enforcement by this role
+rhel_rke2_stig_file_permissions_enabled: true
+
+# RHEL-09-232040: Reset cron file permissions to RPM defaults
+# Uses rpm --setperms and --setugids to restore factory permissions
+rhel_rke2_stig_cron_permissions_enabled: true
+
+# RHEL-09-232245: Set sticky bit on world-writable directories
+# Finds directories with mode 0002 without sticky bit and adds it
+rhel_rke2_stig_sticky_bit_enabled: true
+
+# RHEL-09-232045: Restrict local initialization files to mode 0740
+# WARNING: This modifies user dotfiles (.bashrc, .profile, etc.)
+# Default: false (can break user environments if files need group/world read)
+# Only enable after verifying impact on your environment
+rhel_rke2_stig_init_files_enabled: false
+
+# RHEL-09-232250, RHEL-09-232255: Fix orphaned files (no valid owner/group)
+# WARNING: Auto-remediation can cause application failures
+# Default: false (report-only mode recommended; manual review required)
+# When enabled, assigns files to root:root
+# Note: rhel_rke2_stig_rancher_base_path is always excluded from orphan checks.
+#   See STIG Exemptions section in README.md for assessor documentation.
+rhel_rke2_stig_orphan_files_enabled: false
+
+###############################################################################
+# Postfix Mail Configuration (RHEL-09-252050)
+# Configures postfix to prevent unrestricted mail relaying.
+###############################################################################
+# Enable/disable postfix mail relay restriction
+# Default: true (safe to enable; only applies if postfix is installed)
+rhel_rke2_stig_postfix_enabled: true
+
+# SMTP client restrictions to prevent open relay
+# STIG requires: permit_mynetworks,reject (at minimum)
+rhel_rke2_stig_postfix_client_restrictions: "permit_mynetworks,reject"

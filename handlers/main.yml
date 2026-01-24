@@ -123,3 +123,21 @@
     state: restarted
   when: pcscd_active.rc == 0
   listen: Restart pcscd
+
+###############################################################################
+# Postfix Handlers - Mail Service
+###############################################################################
+- name: Check if postfix is running
+  ansible.builtin.command:
+    cmd: systemctl is-active postfix
+  register: postfix_active
+  changed_when: false
+  failed_when: false
+  listen: Reload postfix
+
+- name: Reload postfix configuration
+  ansible.builtin.command:
+    cmd: postfix reload
+  changed_when: true
+  when: postfix_active.rc == 0
+  listen: Reload postfix
