@@ -846,6 +846,7 @@ Automated testing runs on every push and pull request:
 - [Container Platform SRG V2R4](https://public.cyber.mil/stigs/) - Container runtime (Released: 28 Oct 2025)
 - [NIST SP 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final) - Control framework
 - [FIPS 140-2/140-3](https://csrc.nist.gov/projects/cryptographic-module-validation-program) - Cryptographic requirements
+- [Automated Scanning Analysis](AutomatedScans.md) - OpenSCAP gaps, false positives, and manual checks
 
 ## RKE2/K3S Considerations
 
@@ -872,6 +873,10 @@ guidelines.
 This section tracks changes between DISA STIG releases to help identify scanner
 findings from outdated baselines and understand rule evolution. See
 `stigs/TODO.md` for items affected by recent changes.
+
+> **Automated Scanning:** For detailed analysis of OpenSCAP scanner gaps,
+> false positives, and manual check scripts for rules not covered by automated
+> scanners, see [AutomatedScans.md](AutomatedScans.md).
 
 ### RHEL 9 STIG: V2R6 → V2R7 (January 2026)
 

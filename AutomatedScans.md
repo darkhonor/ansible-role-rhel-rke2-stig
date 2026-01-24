@@ -280,6 +280,20 @@ else
 fi
 ```
 
+> **Exception Consideration:** This requirement was added in V2R6 (previously
+> this STIG ID covered rsh-server). EPEL packages are prohibited because they
+> are not from Red Hat, not covered under support agreements, and not vetted
+> through official supply chains. However, many environments legitimately
+> require EPEL packages for monitoring agents, operational tools, or other
+> software not available in base RHEL repositories.
+>
+> If EPEL is operationally required, document an exception with:
+> - Specific EPEL packages required and business justification
+> - Compensating controls (package vetting, vulnerability scanning, etc.)
+> - AO approval for the exception
+>
+> See the project's `CLAUDE.md` for exception documentation format.
+
 ---
 
 ### RHEL-09-215065 | CAT II | quagga Package Not Installed
@@ -398,10 +412,28 @@ run_check() {
 
 # CAT I Checks
 check_672020() {
+    # Part 1: Verify configured policy matches generated policy
     policy_check=$(update-crypto-policies --check 2>&1)
     if echo "$policy_check" | grep -q "does NOT match"; then
         return 1
     fi
+
+    # Part 2: Verify backend symlinks point to correct policy location
+    current_policy=$(update-crypto-policies --show)
+    for backend in /etc/crypto-policies/back-ends/*.config; do
+        [ -e "$backend" ] || continue
+        # nss.config is not a symlink by design
+        [[ "$backend" == *"nss.config"* ]] && continue
+        if [ -L "$backend" ]; then
+            target=$(readlink -f "$backend")
+            if [[ ! "$target" =~ ^/usr/share/crypto-policies/ ]]; then
+                return 1
+            fi
+        else
+            # Non-symlink backend (except nss.config) indicates override
+            return 1
+        fi
+    done
     return 0
 }
 
