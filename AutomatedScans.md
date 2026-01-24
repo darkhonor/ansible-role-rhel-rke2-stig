@@ -496,6 +496,87 @@ exit 0
 
 ---
 
+## False Positives - Kubernetes/Domain Environments
+
+These findings are **expected behavior** in RKE2/K3S Kubernetes environments and
+systems joined to Active Directory or FreeIPA. Document as false positives.
+
+### RHEL-09-232250 / RHEL-09-232255 | Orphaned Files in Container Paths
+
+**STIG IDs:** RHEL-09-232250, RHEL-09-232255
+**Group IDs:** V-257930, V-257931
+**Severity:** CAT II
+
+**Scanner Behavior:** Automated scanners (Nessus, OpenSCAP, SCAP Compliance
+Checker) will flag files under `/var/lib/rancher` as having no valid owner
+or group owner.
+
+**Why This is a False Positive:**
+
+1. **Container User Namespaces**: Files under `/var/lib/rancher` belong to
+   container processes using mapped UIDs (e.g., 100000-165535) that
+   intentionally don't exist in `/etc/passwd`. This is a **security feature**
+   called user namespace isolation.
+
+2. **Container Image UIDs**: Container images define their own users (nginx,
+   postgres, etc.) with UIDs that differ from host users by design.
+
+3. **Domain User Homes**: If the system is joined to AD/IPA, files under
+   `/home/<DOMAIN>/` are owned by directory service UIDs resolved via SSSD
+   at runtime, not local passwd entries.
+
+**Affected Paths:**
+- `/var/lib/rancher/rke2` - RKE2 Kubernetes data
+- `/var/lib/rancher/k3s` - K3S Kubernetes data
+- `/var/lib/rancher/longhorn` - Longhorn CSI volumes
+- `/var/lib/rancher/local-path-provisioner` - Local-path PVs
+- `/home/<DOMAIN>/` - Domain user home directories (if SSSD enabled)
+
+**Verification Script:**
+
+```bash
+#!/bin/bash
+# Verify orphaned files are only in expected container/domain paths
+# Any orphans OUTSIDE these paths are real findings
+
+echo "=== RHEL-09-232250/232255: Orphaned File Analysis ==="
+echo ""
+
+# Define expected exclusion paths
+RANCHER_PATH="/var/lib/rancher"
+DOMAIN_PATH="/home/contoso.com"  # Adjust for your domain
+
+echo "Checking for orphaned files OUTSIDE expected paths..."
+echo "(Files in $RANCHER_PATH and $DOMAIN_PATH are expected)"
+echo ""
+
+# Find orphans excluding known container/domain paths
+orphans=$(find / -xdev \
+    -path "$RANCHER_PATH" -prune -o \
+    -path "$DOMAIN_PATH" -prune -o \
+    \( -nouser -o -nogroup \) -print 2>/dev/null)
+
+if [ -z "$orphans" ]; then
+    echo "[PASS] No unexpected orphaned files found"
+    echo ""
+    echo "Note: Files in $RANCHER_PATH are container UIDs (expected)"
+    echo "Note: Files in $DOMAIN_PATH are domain UIDs (expected)"
+    exit 0
+else
+    echo "[FAIL] Orphaned files found outside container/domain paths:"
+    echo "$orphans"
+    exit 1
+fi
+```
+
+**Handling:** When reviewing scan results:
+1. Filter findings for paths under `/var/lib/rancher`
+2. Filter findings for domain home directory paths
+3. Only investigate orphaned files outside these paths
+4. Document the exemption per README.md STIG Exemptions section
+
+---
+
 ## False Positives - Deprecated Rules
 
 These rules were **deprecated in V2R7** but OpenSCAP will still check for them.
