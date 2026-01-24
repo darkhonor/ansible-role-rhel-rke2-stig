@@ -501,6 +501,51 @@
       when: not sshd_config_file.stat.exists
 
     ###########################################################
+    # RHEL-09-213040: Verify kernel.core_pattern in /etc/sysctl.conf
+    # Note: Disables core dumps by piping to /bin/false
+    ###########################################################
+    - name: RHEL-09-213040 | Verify kernel.core_pattern in sysctl.conf
+      ansible.builtin.command:
+        cmd: grep -E "^kernel\.core_pattern\s*=\s*\|/bin/false" /etc/sysctl.conf
+      register: sysctl_core_pattern
+      changed_when: false
+      failed_when: sysctl_core_pattern.rc != 0
+
+    - name: RHEL-09-213040 | Report kernel.core_pattern status
+      ansible.builtin.debug:
+        msg: "kernel.core_pattern=|/bin/false is configured in /etc/sysctl.conf"
+
+    ###########################################################
+    # RHEL-09-213080: Verify kernel.yama.ptrace_scope in /etc/sysctl.conf
+    # Note: Restricts ptrace to descendant processes only
+    ###########################################################
+    - name: RHEL-09-213080 | Verify kernel.yama.ptrace_scope in sysctl.conf
+      ansible.builtin.command:
+        cmd: grep -E "^kernel\.yama\.ptrace_scope\s*=\s*1" /etc/sysctl.conf
+      register: sysctl_ptrace_scope
+      changed_when: false
+      failed_when: sysctl_ptrace_scope.rc != 0
+
+    - name: RHEL-09-213080 | Report kernel.yama.ptrace_scope status
+      ansible.builtin.debug:
+        msg: "kernel.yama.ptrace_scope=1 is configured in /etc/sysctl.conf"
+
+    ###########################################################
+    # RHEL-09-253050: Verify net.ipv4.conf.default.rp_filter in /etc/sysctl.conf
+    # Note: Enables reverse-path filtering to prevent IP spoofing
+    ###########################################################
+    - name: RHEL-09-253050 | Verify rp_filter in sysctl.conf
+      ansible.builtin.command:
+        cmd: grep -E "^net\.ipv4\.conf\.default\.rp_filter\s*=\s*1" /etc/sysctl.conf
+      register: sysctl_rp_filter
+      changed_when: false
+      failed_when: sysctl_rp_filter.rc != 0
+
+    - name: RHEL-09-253050 | Report rp_filter status
+      ansible.builtin.debug:
+        msg: "net.ipv4.conf.default.rp_filter=1 is configured in /etc/sysctl.conf"
+
+    ###########################################################
     # RHEL-09-252040: Verify NetworkManager DNS mode
     # Note: NetworkManager may not be installed in container; test conditionally
     ###########################################################
@@ -559,6 +604,9 @@
             - RKE2 modules config: Verified
             - Sysctl config (98-rke2.conf): Verified
             - STIG override config (99-zzz): Verified
+            - core_pattern (RHEL-09-213040): Verified
+            - ptrace_scope (RHEL-09-213080): Verified
+            - rp_filter (RHEL-09-253050): Verified
             - User namespaces (RHEL-09-213105 EXEMPTION): Verified
             - IP forwarding override (RHEL-09-253075 EXEMPTION): Verified
 

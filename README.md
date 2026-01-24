@@ -68,7 +68,7 @@ in future releases.*
 
 ## STIG Coverage
 
-This role currently addresses **67 STIG findings**:
+This role currently addresses **70 STIG findings**:
 
 ### Cryptographic Policy (1 finding)
 
@@ -107,6 +107,14 @@ This role currently addresses **67 STIG findings**:
 | RHEL-09-654085 - 654175 | CAT II | Privileged command auditing (passwd, sudo, su, etc.) |
 | RHEL-09-654180 - 654210 | CAT II | Mount/system control auditing |
 | RHEL-09-654215 - 654255 | CAT II | Identity file change auditing |
+
+### Kernel Hardening (3 findings)
+
+| STIG ID | Severity | Description |
+|---------|----------|-------------|
+| RHEL-09-213040 | CAT II | Disable core dumps via kernel.core_pattern |
+| RHEL-09-213080 | CAT II | Restrict ptrace to descendant processes only |
+| RHEL-09-253050 | CAT II | Enable reverse-path filter for IPv4 by default |
 
 ### Kernel Module Blacklist (8 findings)
 

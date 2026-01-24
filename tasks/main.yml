@@ -79,6 +79,66 @@
     - CAT II
 
 ###########################################################
+# STIG ID: RHEL-09-213040    Group ID: V-257802
+# Rule Title: RHEL 9 must disable the kernel.core_pattern.
+# Severity: CAT II
+# Note: Piping core dumps to /bin/false prevents sensitive memory contents
+#   from being written to disk. This is a general STIG requirement applied
+#   directly to /etc/sysctl.conf.
+###########################################################
+- name: RHEL-09-213040 | Disable core dumps via kernel.core_pattern
+  ansible.posix.sysctl:
+    name: kernel.core_pattern
+    value: '|/bin/false'
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: true
+  tags:
+    - RHEL-09-213040
+    - kernel
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-213080    Group ID: V-257810
+# Rule Title: RHEL 9 must restrict the use of the ptrace system call to
+#   descendants of a process only.
+# Severity: CAT II
+# Note: Setting ptrace_scope to 1 limits process debugging/tracing to child
+#   processes only, reducing attack surface. Applied directly to /etc/sysctl.conf.
+###########################################################
+- name: RHEL-09-213080 | Restrict ptrace to descendant processes
+  ansible.posix.sysctl:
+    name: kernel.yama.ptrace_scope
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: true
+  tags:
+    - RHEL-09-213080
+    - kernel
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-253050    Group ID: V-257965
+# Rule Title: RHEL 9 must use a reverse-path filter for IPv4 network
+#   traffic when possible by default.
+# Severity: CAT II
+# Note: Reverse-path filtering helps prevent IP spoofing attacks by
+#   verifying source addresses. Applied directly to /etc/sysctl.conf.
+###########################################################
+- name: RHEL-09-253050 | Enable reverse-path filter for IPv4 by default
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.default.rp_filter
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: true
+  tags:
+    - RHEL-09-253050
+    - network
+    - CAT II
+
+###########################################################
 # STIG ID: RHEL-09-255095    Group ID: V-257995
 # Rule Title: RHEL 9 must be configured so that all network connections
 #   associated with SSH traffic terminate after becoming unresponsive.
