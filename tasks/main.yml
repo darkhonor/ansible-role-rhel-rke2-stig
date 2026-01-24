@@ -138,6 +138,28 @@
     - CAT II
 
 ###########################################################
+# STIG ID: RHEL-09-255035    Group ID: V-257983
+# Rule Title: RHEL 9 SSHD must accept public key authentication.
+# Severity: CAT II
+# Note: If an approved alternate multifactor authentication method is used,
+#   this requirement is Not Applicable.
+###########################################################
+- name: RHEL-09-255035 | Enable SSH public key authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#*\s*PubkeyAuthentication\s+'
+    line: 'PubkeyAuthentication yes'
+    state: present
+  notify: Restart sshd
+  when:
+    - rhel_rke2_stig_ssh_enabled | default(true)
+    - rhel_rke2_stig_sshd_config_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-255035
+    - ssh
+    - CAT II
+
+###########################################################
 # STIG ID: RHEL-09-255070    Group ID: V-270178
 # Rule Title: The RHEL 9 SSH client must be configured to use only
 #   DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3
@@ -374,6 +396,31 @@
     - rke2
     - sysctl
     - RHEL-09-253075
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-253075, RHEL-09-213105 (EXEMPTIONS)
+# Rule Title: Override STIG base sysctl settings that conflict with
+#   Kubernetes networking. Uses 99-zzz- prefix to load AFTER the STIG
+#   base config (99-sysctl.conf symlink to /etc/sysctl.conf).
+# Severity: CAT II
+# Note: STIG profile sets net.ipv4.conf.all.forwarding=0 which conflicts
+#   with Kubernetes requirements. This file ensures our exempted settings
+#   take precedence regardless of STIG base configuration.
+###########################################################
+- name: RKE2-SYSCTL | Deploy STIG override sysctl settings
+  ansible.builtin.copy:
+    src: 99-zzz-rke2-stig-override.conf
+    dest: /etc/sysctl.d/99-zzz-rke2-stig-override.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload sysctl
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-09-253075
+    - RHEL-09-213105
     - CAT II
 
 ###########################################################

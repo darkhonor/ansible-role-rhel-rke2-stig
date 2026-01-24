@@ -236,12 +236,73 @@
       changed_when: false
       failed_when: sysctl_bridge_nf.rc != 0
 
+    ###########################################################
+    # RHEL-09-213105: Verify user namespaces enabled for container isolation
+    # Note: STIG wants 0 (disabled), but Kubernetes requires namespaces for
+    #   container UID isolation. This is a documented exemption.
+    ###########################################################
+    - name: RHEL-09-213105 | Verify user namespaces enabled in sysctl config
+      ansible.builtin.command:
+        cmd: grep -E "^user\.max_user_namespaces\s*=\s*15000" /etc/sysctl.d/98-rke2.conf
+      register: sysctl_user_ns
+      changed_when: false
+      failed_when: sysctl_user_ns.rc != 0
+
+    - name: RHEL-09-213105 | Report user namespaces status
+      ansible.builtin.debug:
+        msg: >-
+          user.max_user_namespaces=15000 configured (EXEMPTION: container UID isolation)
+
     - name: RKE2-SYSCTL | Verify file permissions
       ansible.builtin.assert:
         that:
           - rke2_sysctl_file.stat.mode == '0644'
         fail_msg: "RKE2 sysctl config has incorrect permissions"
         success_msg: "RKE2 sysctl config permissions are correct (0644)"
+
+    ###########################################################
+    # RKE2-SYSCTL-OVERRIDE: Verify STIG override sysctl configuration
+    # Note: This file uses 99-zzz- prefix to load AFTER STIG base config
+    ###########################################################
+    - name: RKE2-SYSCTL-OVERRIDE | Verify override config file exists
+      ansible.builtin.stat:
+        path: /etc/sysctl.d/99-zzz-rke2-stig-override.conf
+      register: rke2_sysctl_override_file
+
+    - name: RKE2-SYSCTL-OVERRIDE | Assert override config exists
+      ansible.builtin.assert:
+        that:
+          - rke2_sysctl_override_file.stat.exists
+          - rke2_sysctl_override_file.stat.size > 0
+        fail_msg: "RKE2 STIG override sysctl config missing or empty"
+        success_msg: "RKE2 STIG override sysctl config exists and has content"
+
+    - name: RKE2-SYSCTL-OVERRIDE | Verify conf.all.forwarding override
+      ansible.builtin.command:
+        cmd: grep -E "^net\.ipv4\.conf\.all\.forwarding\s*=\s*1" /etc/sysctl.d/99-zzz-rke2-stig-override.conf
+      register: sysctl_override_forwarding
+      changed_when: false
+      failed_when: sysctl_override_forwarding.rc != 0
+
+    - name: RKE2-SYSCTL-OVERRIDE | Verify user namespaces override
+      ansible.builtin.command:
+        cmd: grep -E "^user\.max_user_namespaces\s*=\s*15000" /etc/sysctl.d/99-zzz-rke2-stig-override.conf
+      register: sysctl_override_userns
+      changed_when: false
+      failed_when: sysctl_override_userns.rc != 0
+
+    - name: RKE2-SYSCTL-OVERRIDE | Verify file permissions
+      ansible.builtin.assert:
+        that:
+          - rke2_sysctl_override_file.stat.mode == '0644'
+        fail_msg: "RKE2 STIG override config has incorrect permissions"
+        success_msg: "RKE2 STIG override config permissions are correct (0644)"
+
+    - name: RKE2-SYSCTL-OVERRIDE | Report override status
+      ansible.builtin.debug:
+        msg: >-
+          STIG override config ensures forwarding and user namespaces settings
+          take precedence over STIG base configuration
 
     ###########################################################
     # RKE2-NETWORK: Verify NetworkManager CNI configuration
@@ -378,6 +439,62 @@
         msg: "ClientAliveInterval=600 is configured in /etc/ssh/sshd_config"
       when: sshd_config_file.stat.exists
 
+    ###########################################################
+    # RHEL-09-255035: Verify SSH PubkeyAuthentication
+    ###########################################################
+    - name: RHEL-09-255035 | Verify PubkeyAuthentication in sshd_config
+      ansible.builtin.command:
+        cmd: grep -E "^PubkeyAuthentication\s+yes" /etc/ssh/sshd_config
+      register: ssh_pubkey_auth
+      changed_when: false
+      failed_when: ssh_pubkey_auth.rc != 0
+      when: sshd_config_file.stat.exists
+
+    - name: RHEL-09-255035 | Report PubkeyAuthentication status
+      ansible.builtin.debug:
+        msg: "PubkeyAuthentication=yes is configured in /etc/ssh/sshd_config"
+      when: sshd_config_file.stat.exists
+
+    ###########################################################
+    # RHEL-09-255070/255075: Verify SSH MACs in crypto-policies backends
+    # Note: Role configures MACs via crypto-policies back-ends, not sshd_config
+    ###########################################################
+    - name: RHEL-09-255070 | Check if openssh.config backend exists
+      ansible.builtin.stat:
+        path: /etc/crypto-policies/back-ends/openssh.config
+      register: openssh_backend
+
+    - name: RHEL-09-255070 | Verify SSH client MACs in crypto-policies
+      ansible.builtin.command:
+        cmd: grep -E "^MACs\s+hmac-sha2-256" /etc/crypto-policies/back-ends/openssh.config
+      register: ssh_client_macs
+      changed_when: false
+      failed_when: ssh_client_macs.rc != 0
+      when: openssh_backend.stat.exists
+
+    - name: RHEL-09-255070 | Report SSH client MACs status
+      ansible.builtin.debug:
+        msg: "SSH client MACs configured in crypto-policies backend"
+      when: openssh_backend.stat.exists
+
+    - name: RHEL-09-255075 | Check if opensshserver.config backend exists
+      ansible.builtin.stat:
+        path: /etc/crypto-policies/back-ends/opensshserver.config
+      register: opensshserver_backend
+
+    - name: RHEL-09-255075 | Verify SSH server MACs in crypto-policies
+      ansible.builtin.command:
+        cmd: grep -E "^MACs\s+hmac-sha2-256" /etc/crypto-policies/back-ends/opensshserver.config
+      register: ssh_server_macs
+      changed_when: false
+      failed_when: ssh_server_macs.rc != 0
+      when: opensshserver_backend.stat.exists
+
+    - name: RHEL-09-255075 | Report SSH server MACs status
+      ansible.builtin.debug:
+        msg: "SSH server MACs configured in crypto-policies backend"
+      when: opensshserver_backend.stat.exists
+
     - name: RHEL-09-255xxx | Skip SSH tests (openssh-server not installed)
       ansible.builtin.debug:
         msg: "openssh-server not installed in container - skipping SSH verification"
@@ -427,6 +544,9 @@
             - RHEL-09-215105: {{ 'Verified' if crypto_policy_file.stat.exists else 'Skipped (not available in container)' }}
 
           SSH Configuration:
+            - PubkeyAuthentication (RHEL-09-255035): {{ 'Verified' if sshd_config_file.stat.exists else 'Skipped (not installed)' }}
+            - SSH client MACs (RHEL-09-255070): {{ 'Verified' if openssh_backend.stat.exists else 'Skipped (not installed)' }}
+            - SSH server MACs (RHEL-09-255075): {{ 'Verified' if opensshserver_backend.stat.exists else 'Skipped (not installed)' }}
             - ClientAliveCountMax (RHEL-09-255095): {{ 'Verified' if sshd_config_file.stat.exists else 'Skipped (not installed)' }}
             - ClientAliveInterval (RHEL-09-255100): {{ 'Verified' if sshd_config_file.stat.exists else 'Skipped (not installed)' }}
 
@@ -437,7 +557,10 @@
           Kernel Hardening:
             - Module blacklist (8 modules): Verified
             - RKE2 modules config: Verified
-            - Sysctl config: Verified
+            - Sysctl config (98-rke2.conf): Verified
+            - STIG override config (99-zzz): Verified
+            - User namespaces (RHEL-09-213105 EXEMPTION): Verified
+            - IP forwarding override (RHEL-09-253075 EXEMPTION): Verified
 
           Application Whitelisting:
             - fapolicyd rules: {{ 'Verified' if fapolicyd_dir.stat.exists else 'Skipped (not installed)' }}

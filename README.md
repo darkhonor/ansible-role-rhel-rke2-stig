@@ -68,7 +68,7 @@ in future releases.*
 
 ## STIG Coverage
 
-This role currently addresses **66 STIG findings**:
+This role currently addresses **67 STIG findings**:
 
 ### Cryptographic Policy (1 finding)
 
@@ -83,10 +83,11 @@ This role currently addresses **66 STIG findings**:
 | RHEL-09-411010 | CAT II | Maximum password lifetime (60 days) |
 | RHEL-09-611075 | CAT II | Minimum password lifetime (24 hours) |
 
-### SSH Configuration (4 findings)
+### SSH Configuration (5 findings)
 
 | STIG ID | Severity | Description |
 |---------|----------|-------------|
+| RHEL-09-255035 | CAT II | SSH public key authentication enabled |
 | RHEL-09-255070 | CAT II | SSH client MACs (FIPS 140-3 validated algorithms) |
 | RHEL-09-255075 | CAT II | SSH server MACs (FIPS 140-3 validated algorithms) |
 | RHEL-09-255095 | CAT II | SSH ClientAliveCountMax (terminate unresponsive connections) |
@@ -129,6 +130,7 @@ requirements but are necessary for Kubernetes operation:
 |---------------|---------------|---------|
 | Kernel Modules | `/etc/modules-load.d/rke2-modules.conf` | Load networking modules for CNI |
 | Sysctl Tuning | `/etc/sysctl.d/98-rke2.conf` | Kernel parameters for K8s networking |
+| STIG Override | `/etc/sysctl.d/99-zzz-rke2-stig-override.conf` | Override STIG base conflicts |
 | NetworkManager | `/etc/NetworkManager/conf.d/rke2-canal.conf` | Ignore CNI interfaces |
 | RKE2 Audit Rules | `/etc/audit/rules.d/10-rke2-server.rules` | Audit K8s components |
 | fapolicyd Rules | `/etc/fapolicyd/rules.d/60-rke2.rules` | Whitelist storage paths |
@@ -144,12 +146,114 @@ System Security Officer (ISSO) and documented in the System Security Plan (SSP).
 
 | STIG ID | Group ID | Severity | Rule Title | Justification |
 |---------|----------|----------|------------|---------------|
+| [RHEL-09-213105](#rhel-09-213105-user-namespaces) | V-257816 | CAT II | User namespaces must be disabled | Required for container UID isolation |
 | [RHEL-09-253075](#rhel-09-253075-ipv4-packet-forwarding) | V-257970 | CAT II | IPv4 packet forwarding must be disabled | Required for Kubernetes pod networking |
 | [RHEL-09-251015](#rhel-09-251015--rhel-09-251020-firewalld-service) | V-257936 | CAT II | firewalld service must be active | RKE2 iptables conflicts with firewalld |
 | [RHEL-09-251020](#rhel-09-251015--rhel-09-251020-firewalld-service) | V-257937 | CAT II | Firewall deny-all policy required | Consequent to RHEL-09-251015 |
 | [RHEL-09-215025](#rhel-09-215025--rhel-09-215045-nfs-utils-and-gssproxy) | V-257828 | CAT II | nfs-utils must not be installed | Required for Longhorn CSI storage |
 | [RHEL-09-215045](#rhel-09-215025--rhel-09-215045-nfs-utils-and-gssproxy) | V-257832 | CAT II | gssproxy must not be installed | Dependency of nfs-utils |
 | [RHEL-09-215105](#rhel-09-215105-fips-cryptographic-policy) | V-258241 | CAT II | FIPS 140-3 cryptographic policy | AD-SUPPORT subpolicy for IPA/AD |
+
+---
+
+### RHEL-09-213105: User Namespaces
+
+| Field | Value |
+|-------|-------|
+| **STIG ID** | RHEL-09-213105 |
+| **Group ID** | V-257816 |
+| **Severity** | CAT II (Medium) |
+| **Rule Title** | RHEL 9 must disable the use of user namespaces |
+| **Status** | EXEMPTION REQUIRED |
+
+#### STIG Requirement
+
+The STIG requires `user.max_user_namespaces = 0` to disable user namespaces,
+reducing attack surface by preventing unprivileged users from creating isolated
+namespace environments.
+
+#### This Role's Setting
+
+This role sets `user.max_user_namespaces = 15000` in `/etc/sysctl.d/98-rke2.conf`.
+
+#### Justification
+
+User namespaces are a **security feature** for container environments, not a
+vulnerability. Disabling them would actually *reduce* container isolation and
+security. Kubernetes and container runtimes use user namespaces for:
+
+1. **Container UID Isolation**: Maps container root (UID 0) to unprivileged host
+   UIDs, preventing container breakout from gaining real root privileges
+
+2. **Rootless Container Support**: containerd and CRI-O can run containers
+   without requiring host root privileges, providing defense-in-depth
+
+3. **Kubernetes Pod User Namespaces**: Kubernetes 1.25+ includes user namespace
+   support for pods (graduating from alpha to stable), enabling per-pod UID
+   mapping for enhanced multi-tenant isolation
+
+4. **Security Sandbox Enforcement**: User namespaces are foundational to
+   container security models including gVisor and Kata Containers
+
+Without user namespaces enabled, containers run with less isolation, and future
+Kubernetes security features cannot be utilized.
+
+#### Impact Assessment
+
+| Aspect | Assessment |
+|--------|------------|
+| **Risk Level** | Low (enabling namespaces improves security) |
+| **Attack Vector** | Namespace escapes are rare; isolation benefits outweigh risks |
+| **Compensating Controls** | See below |
+
+#### Compensating Controls
+
+1. **SELinux Enforcing**: Mandatory access control limits namespace capabilities
+2. **seccomp Profiles**: RKE2 applies default seccomp profiles restricting syscalls
+3. **Pod Security Standards**: Kubernetes PSS restricts privileged containers
+4. **Network Policies**: Limit pod-to-pod communication regardless of namespace
+5. **Resource Quotas**: Prevent namespace resource exhaustion attacks
+
+#### Remediation Path
+
+| Condition | Action |
+|-----------|--------|
+| **If node is decommissioned** | Set `user.max_user_namespaces = 0` after removing from cluster |
+| **Non-Kubernetes workloads** | Pure STIG compliance may be appropriate |
+| **Kubernetes security features** | Monitor K8s pod user namespace graduation for enhanced isolation |
+
+#### Documentation Template for ISSO
+
+```
+STIG Exemption Request
+
+System: [System Name]
+STIG ID: RHEL-09-213105
+Control: Disable User Namespaces
+
+Operational Requirement: The system is a Kubernetes (RKE2) node. User namespaces
+are required for container UID isolation, which maps container root to
+unprivileged host UIDs. This is a security feature that prevents container
+breakout attacks from gaining real host root privileges.
+
+Security Rationale: Disabling user namespaces would REDUCE security by:
+- Allowing container root to be actual host root
+- Preventing use of rootless container runtimes
+- Blocking Kubernetes pod user namespace features (1.25+)
+
+This Role's Setting: user.max_user_namespaces = 15000
+
+Compensating Controls:
+- SELinux enforcing mode provides mandatory access control
+- seccomp profiles restrict available syscalls
+- Kubernetes Pod Security Standards enforce container restrictions
+- Network policies limit lateral movement between pods
+
+Risk Assessment: Low. User namespaces are a defense-in-depth security control.
+Enabling them improves container isolation rather than creating vulnerability.
+
+Risk Acceptance: [ISSO Signature and Date]
+```
 
 ---
 
@@ -171,7 +275,14 @@ router.
 
 #### This Role's Setting
 
-This role sets `net.ipv4.ip_forward = 1` in `/etc/sysctl.d/98-rke2.conf`.
+This role deploys two sysctl configuration files:
+
+- `/etc/sysctl.d/98-rke2.conf` - Sets `net.ipv4.ip_forward = 1`
+- `/etc/sysctl.d/99-zzz-rke2-stig-override.conf` - Sets `net.ipv4.conf.all.forwarding = 1`
+
+The override file uses the `99-zzz-` prefix to ensure it loads **after** the STIG
+base configuration (`99-sysctl.conf` symlink), which sets `conf.all.forwarding = 0`.
+This guarantees our Kubernetes-required settings take precedence.
 
 #### Justification
 
@@ -787,6 +898,7 @@ ansible-playbook site.yml --tags RHEL-09-611075
 | `/etc/modprobe.d/blacklist.conf` | Kernel module blacklist |
 | `/etc/modules-load.d/rke2-modules.conf` | Kernel modules for K8s networking |
 | `/etc/sysctl.d/98-rke2.conf` | Kernel tuning for Kubernetes |
+| `/etc/sysctl.d/99-zzz-rke2-stig-override.conf` | Override STIG base sysctl conflicts |
 | `/etc/NetworkManager/conf.d/rke2-canal.conf` | CNI interface ignore list |
 | `/etc/fapolicyd/rules.d/60-rke2.rules` | Application whitelist for storage |
 
