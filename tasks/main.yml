@@ -138,6 +138,106 @@
     - CAT II
 
 ###########################################################
+# STIG ID: RHEL-09-255070    Group ID: V-270178
+# Rule Title: The RHEL 9 SSH client must be configured to use only
+#   DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3
+#   validated cryptographic hash algorithms to protect the confidentiality
+#   of SSH client connections.
+# Severity: CAT II
+# Note: OSCAP checks require MACs in specific order. The crypto policy
+#   backend file is used rather than sshd_config per STIG guidance.
+###########################################################
+- name: RHEL-09-255070 | Configure SSH client crypto policy MACs
+  ansible.builtin.lineinfile:
+    path: /etc/crypto-policies/back-ends/openssh.config
+    regexp: '^MACs\s+'
+    line: "MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart sshd
+  when:
+    - rhel_rke2_stig_ssh_enabled | default(true)
+    - rhel_rke2_stig_sshd_config_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-255070
+    - ssh
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-255075    Group ID: V-257991
+# Rule Title: The RHEL 9 SSH server must be configured to use only Message
+#   Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic
+#   hash algorithms to protect the confidentiality of SSH server connections.
+# Severity: CAT II
+# Note: OSCAP checks require MACs in specific order. The crypto policy
+#   backend file is used rather than sshd_config per STIG guidance.
+###########################################################
+- name: RHEL-09-255075 | Configure SSH server crypto policy MACs
+  ansible.builtin.lineinfile:
+    path: /etc/crypto-policies/back-ends/opensshserver.config
+    regexp: '^MACs\s+'
+    line: "MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart sshd
+  when:
+    - rhel_rke2_stig_ssh_enabled | default(true)
+    - rhel_rke2_stig_sshd_config_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-255075
+    - ssh
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-255070    Group ID: V-270178
+# Rule Title: The RHEL 9 SSH client must be configured to use only
+#   DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3
+#   validated cryptographic hash algorithms to protect the confidentiality
+#   of SSH client connections.
+# Severity: CAT II
+# Note: MACs in ssh_config override crypto policy. Remove to ensure policy
+#   backend settings take effect.
+###########################################################
+- name: RHEL-09-255070 | Remove MACs override from SSH client config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/ssh_config
+    regexp: '^\s*MACs\s+'
+    state: absent
+  notify: Restart sshd
+  when: rhel_rke2_stig_ssh_enabled | default(true)
+  tags:
+    - RHEL-09-255070
+    - ssh
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-255075    Group ID: V-257991
+# Rule Title: The RHEL 9 SSH server must be configured to use only Message
+#   Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic
+#   hash algorithms to protect the confidentiality of SSH server connections.
+# Severity: CAT II
+# Note: MACs in sshd_config override crypto policy. Remove to ensure policy
+#   backend settings take effect.
+###########################################################
+- name: RHEL-09-255075 | Remove MACs override from SSH server config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*MACs\s+'
+    state: absent
+  notify: Restart sshd
+  when:
+    - rhel_rke2_stig_ssh_enabled | default(true)
+    - rhel_rke2_stig_sshd_config_check.stat.exists | default(false)
+  tags:
+    - RHEL-09-255075
+    - ssh
+    - CAT II
+
+###########################################################
 # STIG ID: RHEL-09-252040    Group ID: V-257949
 # Rule Title: RHEL 9 must configure a DNS processing mode in Network Manager.
 # Severity: CAT II

@@ -3,9 +3,12 @@
 [![CI](https://github.com/darkhonor/ansible-role-rhel-rke2-stig/actions/workflows/ci.yml/badge.svg)](https://github.com/darkhonor/ansible-role-rhel-rke2-stig/actions/workflows/ci.yml)
 [![Ansible Galaxy](https://img.shields.io/badge/galaxy-darkhonor.rhel__rke2__stig-blue.svg)](https://galaxy.ansible.com/darkhonor/rhel_rke2_stig)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![STIG](https://img.shields.io/badge/RHEL%209%20STIG-V2R7-green.svg)](https://public.cyber.mil/stigs/)
 
 Supplementary Ansible role for enforcing DISA STIG compliance on RHEL 9/10
 systems running RKE2 or K3S Kubernetes distributions.
+
+**Current STIG Baseline:** RHEL 9 V2R7 (Released: 05 Jan 2026)
 
 ## Overview
 
@@ -831,7 +834,7 @@ Automated testing runs on every push and pull request:
 
 ## Compliance References
 
-- [RHEL 9 STIG V2R6](https://public.cyber.mil/stigs/) - Primary OS hardening
+- [RHEL 9 STIG V2R7](https://public.cyber.mil/stigs/) - Primary OS hardening (Released: 05 Jan 2026)
 - [RKE2 STIG V2R4](https://public.cyber.mil/stigs/) - Kubernetes controls
 - [NIST SP 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final) - Control framework
 - [FIPS 140-2/140-3](https://csrc.nist.gov/projects/cryptographic-module-validation-program) - Cryptographic requirements
@@ -855,6 +858,34 @@ guidelines.
 3. Commit your changes (`git commit -am 'Add RHEL-09-XXXXXX control'`)
 4. Push to the branch (`git push origin feature/new-stig-control`)
 5. Open a Pull Request
+
+## RHEL 9 STIG Release History
+
+This section tracks changes between DISA STIG releases to help identify scanner
+findings from outdated baselines and understand rule evolution. See
+`stigs/TODO.md` for items affected by recent changes.
+
+### V2R6 → V2R7 (January 2026)
+
+| STIG ID | Change | Category | Description |
+|---------|--------|----------|-------------|
+| RHEL-09-654097 | Added | CAT II | Audit cron/at scripts and executables |
+| RHEL-09-411115 | Removed | CAT II | Init files world-writable check (deprecated) |
+| RHEL-09-412075 | Removed | CAT III | Last login date/time display (deprecated) |
+
+**53 rules** received check/fix procedure updates (no severity or title changes).
+Key areas updated: kernel module checks, sysctl verification, filesystem permissions.
+
+### V2R5 → V2R6 (October 2025)
+
+| STIG ID | Change | Category | Description |
+|---------|--------|----------|-------------|
+| RHEL-09-654096 | Removed | CAT II | Audit cron scripts (replaced by 654097 in V2R7) |
+| RHEL-09-654260 | Removed | CAT II | Audit account creation/modification |
+| RHEL-09-215035 | Modified | CAT II | Title updated (telnet-server package) |
+| RHEL-09-653040 | Modified | CAT II | Title updated (audit log permissions) |
+
+Net change: 449 → 447 rules (2 removed, 0 added).
 
 ## License
 
