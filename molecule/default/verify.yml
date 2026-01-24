@@ -236,23 +236,6 @@
       changed_when: false
       failed_when: sysctl_bridge_nf.rc != 0
 
-    ###########################################################
-    # RHEL-09-213105: Verify user namespaces enabled for container isolation
-    # Note: STIG wants 0 (disabled), but Kubernetes requires namespaces for
-    #   container UID isolation. This is a documented exemption.
-    ###########################################################
-    - name: RHEL-09-213105 | Verify user namespaces enabled in sysctl config
-      ansible.builtin.command:
-        cmd: grep -E "^user\.max_user_namespaces\s*=\s*15000" /etc/sysctl.d/98-rke2.conf
-      register: sysctl_user_ns
-      changed_when: false
-      failed_when: sysctl_user_ns.rc != 0
-
-    - name: RHEL-09-213105 | Report user namespaces status
-      ansible.builtin.debug:
-        msg: >-
-          user.max_user_namespaces=15000 configured (EXEMPTION: container UID isolation)
-
     - name: RKE2-SYSCTL | Verify file permissions
       ansible.builtin.assert:
         that:
@@ -284,12 +267,24 @@
       changed_when: false
       failed_when: sysctl_override_forwarding.rc != 0
 
-    - name: RKE2-SYSCTL-OVERRIDE | Verify user namespaces override
+    ###########################################################
+    # RHEL-09-213105: Verify user namespaces enabled for container isolation
+    # Note: STIG wants 0 (disabled), but Kubernetes requires namespaces for
+    #   container UID isolation. This is a documented exemption.
+    # Value is configurable via rhel_rke2_stig_user_namespaces_max variable.
+    ###########################################################
+    - name: RHEL-09-213105 | Verify user namespaces in override config
       ansible.builtin.command:
-        cmd: grep -E "^user\.max_user_namespaces\s*=\s*15000" /etc/sysctl.d/99-zzz-rke2-stig-override.conf
+        cmd: grep -E "^user\.max_user_namespaces\s*=\s*[0-9]+" /etc/sysctl.d/99-zzz-rke2-stig-override.conf
       register: sysctl_override_userns
       changed_when: false
       failed_when: sysctl_override_userns.rc != 0
+
+    - name: RHEL-09-213105 | Report user namespaces status
+      ansible.builtin.debug:
+        msg: >-
+          user.max_user_namespaces configured in STIG override
+          (EXEMPTION: container UID isolation)
 
     - name: RKE2-SYSCTL-OVERRIDE | Verify file permissions
       ansible.builtin.assert:

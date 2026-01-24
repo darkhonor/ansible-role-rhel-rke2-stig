@@ -469,8 +469,8 @@
 #   take precedence regardless of STIG base configuration.
 ###########################################################
 - name: RKE2-SYSCTL | Deploy STIG override sysctl settings
-  ansible.builtin.copy:
-    src: 99-zzz-rke2-stig-override.conf
+  ansible.builtin.template:
+    src: 99-zzz-rke2-stig-override.conf.j2
     dest: /etc/sysctl.d/99-zzz-rke2-stig-override.conf
     owner: root
     group: root

@@ -4,7 +4,6 @@
 # Summary: Override STIG base sysctl settings that conflict with Kubernetes.
 #   This file uses the "99-zzz-" prefix to ensure it loads AFTER the STIG
 #   base configuration (99-sysctl.conf -> ../sysctl.conf symlink).
-# Last Updated: 24 Jan 2026
 # Classification: UNCLASSIFIED
 #
 # Load Order Context:
@@ -41,12 +40,12 @@ net.ipv4.conf.default.forwarding = 1
 ###############################################################################
 ## RHEL-09-213105 EXEMPTION: User Namespaces
 ## STIG wants user namespaces disabled (0); Kubernetes containers require
-## them for UID isolation. This reinforces our 98-rke2.conf setting in case
+## them for UID isolation. This reinforces the required setting in case
 ## another config attempts to disable it.
 ###############################################################################
 
 # Ensure user namespaces remain enabled for container isolation
-user.max_user_namespaces = 15000
+user.max_user_namespaces = {{ rhel_rke2_stig_user_namespaces_max }}
 
 ###############################################################################
 ## END OF STIG OVERRIDE SETTINGS

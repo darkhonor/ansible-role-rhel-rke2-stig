@@ -89,3 +89,17 @@ rhel_rke2_stig_nm_dns_enabled: true
 # Default: 'default' maintains traditional /etc/resolv.conf behavior and
 #   ensures DNS server settings from DHCP/static config are properly applied.
 rhel_rke2_stig_nm_dns_mode: "default"
+
+###############################################################################
+# User Namespaces Configuration (RHEL-09-213105 EXEMPTION)
+# Kubernetes containers require user namespaces for UID isolation and security.
+# STIG wants this disabled (0), but that breaks container isolation.
+###############################################################################
+# Maximum number of user namespaces allowed
+# Default: 15000 (sufficient for most Kubernetes deployments)
+# Note: Adjust based on expected pod density and container requirements.
+#   Higher values may be needed for:
+#   - High pod density nodes (100+ pods)
+#   - Workloads using rootless containers
+#   - Nested container scenarios
+rhel_rke2_stig_user_namespaces_max: 15000
