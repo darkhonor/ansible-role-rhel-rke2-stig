@@ -92,7 +92,8 @@
     value: '|/bin/false'
     state: present
     sysctl_file: /etc/sysctl.conf
-    reload: true
+    reload: false
+  notify: Reload sysctl
   tags:
     - RHEL-09-213040
     - kernel
@@ -112,7 +113,8 @@
     value: '1'
     state: present
     sysctl_file: /etc/sysctl.conf
-    reload: true
+    reload: false
+  notify: Reload sysctl
   tags:
     - RHEL-09-213080
     - kernel
@@ -132,7 +134,8 @@
     value: '1'
     state: present
     sysctl_file: /etc/sysctl.conf
-    reload: true
+    reload: false
+  notify: Reload sysctl
   tags:
     - RHEL-09-253050
     - network
