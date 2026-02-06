@@ -340,6 +340,10 @@
     cmd: rpm --setperms cronie
   register: rhel_rke2_stig_cronie_perms
   changed_when: rhel_rke2_stig_cronie_perms.rc == 0
+  # Ignore errors for missing files (e.g., man pages not installed in minimal images)
+  failed_when:
+    - rhel_rke2_stig_cronie_perms.rc != 0
+    - "'cannot access' not in rhel_rke2_stig_cronie_perms.stderr"
   when:
     - rhel_rke2_stig_file_permissions_enabled | default(true)
     - rhel_rke2_stig_cron_permissions_enabled | default(true)
@@ -354,6 +358,10 @@
     cmd: rpm --setugids cronie
   register: rhel_rke2_stig_cronie_ugids
   changed_when: rhel_rke2_stig_cronie_ugids.rc == 0
+  # Ignore errors for missing files (e.g., man pages not installed in minimal images)
+  failed_when:
+    - rhel_rke2_stig_cronie_ugids.rc != 0
+    - "'cannot access' not in rhel_rke2_stig_cronie_ugids.stderr"
   when:
     - rhel_rke2_stig_file_permissions_enabled | default(true)
     - rhel_rke2_stig_cron_permissions_enabled | default(true)
@@ -382,6 +390,10 @@
     cmd: rpm --setperms crontabs
   register: rhel_rke2_stig_crontabs_perms
   changed_when: rhel_rke2_stig_crontabs_perms.rc == 0
+  # Ignore errors for missing files (e.g., man pages not installed in minimal images)
+  failed_when:
+    - rhel_rke2_stig_crontabs_perms.rc != 0
+    - "'cannot access' not in rhel_rke2_stig_crontabs_perms.stderr"
   when:
     - rhel_rke2_stig_file_permissions_enabled | default(true)
     - rhel_rke2_stig_cron_permissions_enabled | default(true)
@@ -396,6 +408,10 @@
     cmd: rpm --setugids crontabs
   register: rhel_rke2_stig_crontabs_ugids
   changed_when: rhel_rke2_stig_crontabs_ugids.rc == 0
+  # Ignore errors for missing files (e.g., man pages not installed in minimal images)
+  failed_when:
+    - rhel_rke2_stig_crontabs_ugids.rc != 0
+    - "'cannot access' not in rhel_rke2_stig_crontabs_ugids.stderr"
   when:
     - rhel_rke2_stig_file_permissions_enabled | default(true)
     - rhel_rke2_stig_cron_permissions_enabled | default(true)
@@ -921,6 +937,60 @@
     owner: root
     group: root
     mode: '0644'
+  notify: Reload sysctl
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-09-253075
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-09-253075 (EXEMPTION)    Group ID: V-257970
+# Rule Title: IPv4 forwarding MUST be written to /etc/sysctl.conf because
+#   sysctl --system processes /etc/sysctl.conf LAST, after all sysctl.d files.
+#   The STIG base remediation sets net.ipv4.conf.all.forwarding=0 in
+#   /etc/sysctl.conf, which would override any sysctl.d settings. By using
+#   ansible.posix.sysctl with sysctl_file=/etc/sysctl.conf, we ensure our
+#   Kubernetes-required settings are in the file that gets processed last.
+# Severity: CAT II
+# Note: These settings use reload: false with a separate handler to ensure
+#   all three settings are applied atomically.
+###########################################################
+- name: RHEL-09-253075 | Enable IPv4 forwarding in /etc/sysctl.conf (EXEMPTION)
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: false
+  notify: Reload sysctl
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-09-253075
+    - CAT II
+
+- name: RHEL-09-253075 | Enable IPv4 conf.all.forwarding in /etc/sysctl.conf (EXEMPTION)
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.all.forwarding
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: false
+  notify: Reload sysctl
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-09-253075
+    - CAT II
+
+- name: RHEL-09-253075 | Enable IPv4 conf.default.forwarding in /etc/sysctl.conf (EXEMPTION)
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.default.forwarding
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: false
   notify: Reload sysctl
   tags:
     - rke2

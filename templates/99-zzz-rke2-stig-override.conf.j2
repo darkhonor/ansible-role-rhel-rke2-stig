@@ -19,9 +19,18 @@
 ###############################################################################
 ## RHEL-09-253075 EXEMPTION: IPv4 Packet Forwarding
 ## STIG requires forwarding disabled; Kubernetes requires it enabled.
-## The STIG base sets net.ipv4.conf.all.forwarding = 0 which conflicts with
-## our net.ipv4.ip_forward = 1 in 98-rke2.conf.
+## The STIG base sets net.ipv4.ip_forward = 0 and net.ipv4.conf.all.forwarding = 0
+## which conflicts with Kubernetes networking requirements.
+##
+## IMPORTANT: Both settings are required:
+##   - net.ipv4.ip_forward: Global master switch for IPv4 forwarding
+##   - net.ipv4.conf.*.forwarding: Per-interface forwarding control
+## If the global switch is off (0), per-interface settings have no effect.
+## This override ensures both are enabled AFTER the STIG base config loads.
 ###############################################################################
+
+# Global IPv4 forwarding master switch (CRITICAL for pod networking)
+net.ipv4.ip_forward = 1
 
 # Enable forwarding on all interfaces (overrides STIG CCE-87181-4)
 net.ipv4.conf.all.forwarding = 1

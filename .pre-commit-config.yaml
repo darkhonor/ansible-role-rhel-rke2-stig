@@ -19,11 +19,13 @@ repos:
         types: [yaml]
 
   # Ansible Linting
+  # Note: ansible-core 2.17+ requires Python 3.10+, so we specify python3.11
   - repo: https://github.com/ansible/ansible-lint
     rev: v25.1.0
     hooks:
       - id: ansible-lint
         args: []
+        language_version: python3.11
         additional_dependencies:
           - ansible-core==2.17.8
 

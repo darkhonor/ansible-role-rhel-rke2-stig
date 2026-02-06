@@ -516,14 +516,61 @@ router.
 
 #### This Role's Setting
 
-This role deploys two sysctl configuration files:
+This role configures IP forwarding in **two locations** to ensure settings persist
+across all scenarios:
 
-- `/etc/sysctl.d/98-rke2.conf` - Sets `net.ipv4.ip_forward = 1`
-- `/etc/sysctl.d/99-zzz-rke2-stig-override.conf` - Sets `net.ipv4.conf.all.forwarding = 1`
+**1. Direct `/etc/sysctl.conf` Modifications (PRIMARY - using `ansible.posix.sysctl`):**
 
-The override file uses the `99-zzz-` prefix to ensure it loads **after** the STIG
-base configuration (`99-sysctl.conf` symlink), which sets `conf.all.forwarding = 0`.
-This guarantees our Kubernetes-required settings take precedence.
+```ini
+net.ipv4.ip_forward = 1
+net.ipv4.conf.all.forwarding = 1
+net.ipv4.conf.default.forwarding = 1
+```
+
+**2. Defense-in-Depth Configuration Files:**
+
+- `/etc/sysctl.d/98-rke2.conf` - RKE2 tuning and initial forwarding settings
+- `/etc/sysctl.d/99-zzz-rke2-stig-override.conf` - Documentation and backup settings
+
+**Critical Settings:**
+
+| Setting | Purpose |
+|---------|---------|
+| `net.ipv4.ip_forward = 1` | Global master switch - MUST be enabled for any forwarding |
+| `net.ipv4.conf.all.forwarding = 1` | Per-interface control for all existing interfaces |
+| `net.ipv4.conf.default.forwarding = 1` | Per-interface control for new interfaces |
+
+> **Note:** Both the global switch (`ip_forward`) and per-interface settings
+> (`conf.*.forwarding`) must be enabled. If the global switch is `0`, per-interface
+> settings have no effect.
+
+#### Critical: sysctl Load Order
+
+⚠️ **IMPORTANT:** The `sysctl --system` command processes configuration in this order:
+
+1. `/run/sysctl.d/*.conf`
+2. `/etc/sysctl.d/*.conf` (alphabetically)
+3. `/usr/local/lib/sysctl.d/*.conf`
+4. `/usr/lib/sysctl.d/*.conf`
+5. **`/etc/sysctl.conf` (ALWAYS LAST)**
+
+This means `/etc/sysctl.conf` **always overrides** settings from `/etc/sysctl.d/*.conf`,
+regardless of file naming (even `99-zzz-*` prefixes).
+
+**Why this matters:** When the STIG base remediation playbook runs, it sets
+`net.ipv4.conf.all.forwarding = 0` in `/etc/sysctl.conf`. If we only deploy
+settings to `/etc/sysctl.d/`, the STIG base settings in `/etc/sysctl.conf` will
+override them on every `sysctl --system` reload.
+
+**This role's solution:** Use `ansible.posix.sysctl` to write our exempted settings
+directly to `/etc/sysctl.conf`. This ensures our Kubernetes-required settings are
+in the file that gets processed **last**, taking final precedence.
+
+The `/etc/sysctl.d/99-zzz-rke2-stig-override.conf` file is retained for:
+
+- Documentation and audit trails
+- Defense-in-depth (if `/etc/sysctl.conf` is regenerated)
+- Clear visibility of what settings are being overridden and why
 
 #### Justification
 
