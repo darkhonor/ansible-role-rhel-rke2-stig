@@ -5,7 +5,7 @@
 # Update versions carefully and test both locally and in CI.
 
 # Core Ansible
-ansible-core==2.17.8
+ansible-core==2.20.1
 
 # Linting (pinned for local/CI parity)
 yamllint==1.35.1
