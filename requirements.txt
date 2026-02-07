@@ -19,4 +19,4 @@ molecule==25.1.0
 molecule-plugins[podman]==23.5.3
 
 # Additional collections support
-jmespath==1.0.1
+jmespath==1.1.0
