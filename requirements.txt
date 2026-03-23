@@ -15,7 +15,7 @@ ansible-lint==25.1.0
 pre-commit==4.5.1
 
 # Testing
-molecule==25.1.0
+molecule==26.3.0
 molecule-plugins[podman]==25.8.12
 
 # Additional collections support
