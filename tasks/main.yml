@@ -220,10 +220,10 @@
 #   compliance while enabling Kerberos interoperability with Active Directory.
 #   The underlying crypto modules remain FIPS-validated; only Kerberos gets
 #   an RC4 exception for AD compatibility. AD support is mandatory in target
-#   environments, so this is a required exemption, not a convenience. The STIG
-#   check explicitly accepts any FIPS:<subpolicy> form, so FIPS:AD-SUPPORT is
-#   compliant; the RC4-for-Kerberos exception is a documented CAT I exemption.
-#   See README.md for exemption details.
+#   environments. The STIG check explicitly accepts any FIPS:<subpolicy> form,
+#   so FIPS:AD-SUPPORT satisfies RHEL-09-215105 - this control is COMPLIANT,
+#   not exempted. The RC4-for-Kerberos behavior is documented for assessor
+#   transparency (not a required exemption). See README.md for details.
 # Container Note: In containers without kernel FIPS mode, update-crypto-policies
 #   may return rc=3 even when the policy is set. We check the state file for
 #   idempotence rather than command output.

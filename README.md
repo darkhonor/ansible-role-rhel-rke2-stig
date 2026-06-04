@@ -202,7 +202,6 @@ System Security Officer (ISSO) and documented in the System Security Plan (SSP).
 | [RHEL-09-251020](#rhel-09-251015--rhel-09-251020-firewalld-service) | V-257937 | CAT II | Firewall deny-all policy required | Consequent to RHEL-09-251015 |
 | [RHEL-09-215025](#rhel-09-215025--rhel-09-215045-nfs-utils-and-gssproxy) | V-257828 | CAT II | nfs-utils must not be installed | Required for Longhorn CSI storage |
 | [RHEL-09-215045](#rhel-09-215025--rhel-09-215045-nfs-utils-and-gssproxy) | V-257832 | CAT II | gssproxy must not be installed | Dependency of nfs-utils |
-| [RHEL-09-215105](#rhel-09-215105-fips-cryptographic-policy) | V-258241 | CAT I | FIPS 140-3 cryptographic policy | AD-SUPPORT subpolicy for IPA/AD |
 
 ---
 
@@ -938,10 +937,11 @@ Risk Acceptance: [ISSO Signature and Date]
 
 > **CAT I note:** As of RHEL 9 STIG V2R8 this is a CAT I (High) finding (DISA
 > elevated the risk rating; the technical requirement did not change). The
-> `FIPS:AD-SUPPORT` rationale below is the documented exemption justification.
-> Active Directory interoperability is a mandatory requirement in the target
-> environment, and the STIG check explicitly accepts any `FIPS:<subpolicy>`
-> form, so this configuration remains compliant.
+> `FIPS:AD-SUPPORT` rationale below documents this as a **compliant
+> configuration, not an exemption** - the STIG check explicitly accepts any
+> `FIPS:<subpolicy>` form. Active Directory interoperability is mandatory in
+> the target environment, and the RC4-for-Kerberos behavior the subpolicy
+> introduces is documented here for assessor transparency.
 
 #### STIG Requirement
 
