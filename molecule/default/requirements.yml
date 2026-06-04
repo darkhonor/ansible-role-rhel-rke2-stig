@@ -6,8 +6,11 @@
 # Last Updated: 23 Jan 2026
 # Classification: UNCLASSIFIED
 ###############################################################################
+# Exact-pinned for reproducible CI builds (Galaxy collections cannot be
+# SHA-pinned; exact version is the integrity ceiling). The published
+# /requirements.yml intentionally keeps >= ranges for downstream consumers.
 collections:
   - name: ansible.posix
-    version: ">=1.5.0"
+    version: "2.2.0"
   - name: community.general
-    version: ">=8.0.0"
+    version: "13.0.1"

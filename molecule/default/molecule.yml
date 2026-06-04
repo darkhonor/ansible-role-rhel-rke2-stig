@@ -17,9 +17,11 @@ driver:
 
 platforms:
   - name: rhel9-stig
-    # Official Red Hat UBI9-init with systemd (SCRM compliant)
-    # CentOS Stream 9 repos enabled in prepare.yml for full package availability
-    image: registry.access.redhat.com/ubi9/ubi-init:latest
+    # Rocky Linux 9: downstream bug-for-bug RHEL 9 rebuild (higher STIG
+    # fidelity than upstream CentOS Stream). Ships BaseOS/AppStream
+    # preconfigured with GPG keys, so no external repos or key fetches are
+    # needed in prepare.yml. quay.io avoids Docker Hub anonymous pull limits.
+    image: quay.io/rockylinux/rockylinux:9@sha256:53f4c6dcb34e1403bd93207351f0af9a593610faeb7165cb8a037346765199b0
     pre_build_image: true
     privileged: true
     command: /usr/sbin/init

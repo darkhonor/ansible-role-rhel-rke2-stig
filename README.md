@@ -1236,7 +1236,7 @@ Automated testing runs on every push and pull request:
 
 - **Linting:** yamllint, ansible-lint
 - **Syntax:** ansible-playbook --syntax-check
-- **Integration:** Molecule with UBI9 container
+- **Integration:** Molecule with Rocky Linux 9 container
 - **Security:** Trivy vulnerability scanning
 
 ## Compliance References

@@ -11,47 +11,50 @@ Please be respectful and constructive in all interactions.
 ### RHEL 9 Python Configuration
 
 RHEL 9 system tools (like `subscription-manager`, `dnf`, etc.) require Python 3.9.
-However, `ansible-core` 2.17+ requires Python 3.10+. To avoid breaking system tools,
+However, `ansible-core` 2.21+ requires Python 3.12+. To avoid breaking system tools,
 we use a dual-Python setup:
 
 | Command    | Version | Purpose                                    |
 |------------|---------|------------------------------------------- |
 | `python3`  | 3.9.x   | System tools (subscription-manager, dnf)  |
-| `python`   | 3.11.x  | Development tools (ansible, pre-commit)   |
+| `python`   | 3.12.x  | Development tools (ansible, pre-commit)   |
 
-#### Installing Python 3.11 on RHEL 9
+#### Installing Python 3.12 on RHEL 9
 
 ```bash
-# Install Python 3.11 from EPEL
-sudo dnf install -y epel-release
-sudo dnf install -y python3.11 python3.11-pip python3.11-devel
+# Python 3.12 ships in the RHEL 9.4+ AppStream repository (no EPEL required)
+sudo dnf install -y python3.12 python3.12-pip python3.12-devel
 
 # Configure alternatives (keep python3 pointing to 3.9 for system tools)
 sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 3
 sudo alternatives --set python3 /usr/bin/python3.9
 
-# Set python (without the 3) to use 3.11 for development
-sudo alternatives --install /usr/bin/python python /usr/bin/python3.11 2
-sudo alternatives --set python /usr/bin/python3.11
+# Set python (without the 3) to use 3.12 for development
+sudo alternatives --install /usr/bin/python python /usr/bin/python3.12 2
+sudo alternatives --set python /usr/bin/python3.12
 
 # Verify configuration
 python3 --version   # Should show Python 3.9.x
-python --version    # Should show Python 3.11.x
+python --version    # Should show Python 3.12.x
 ```
 
-> **⚠️ WARNING**: Do NOT change `python3` to point to Python 3.11. This will break
+> **⚠️ WARNING**: Do NOT change `python3` to point to Python 3.12. This will break
 > `subscription-manager`, `dnf`, and other RHEL system tools. Recovery requires
 > manually creating a temporary repo with entitlement certificates to reinstall
 > `subscription-manager`. Don't ask how we know this.
 
 #### Installing Development Dependencies
 
-All Python dependencies are pinned in `requirements.txt` for consistency between
-local development and CI/CD. Choose **one** of the following installation methods:
+All Python dependencies are hash-pinned in `requirements.txt`, which is generated
+from `requirements.in` via `pip-compile --generate-hashes` (pip-tools) for
+reproducible, integrity-verified installs across local development and CI/CD. Edit
+`requirements.in` (not `requirements.txt`) and recompile to change a dependency;
+Dependabot maintains the lock automatically.
+Choose **one** of the following installation methods:
 
 ##### Option A: System-wide Installation (Simpler)
 
-Install tools directly using the `python` (3.11) command:
+Install tools directly using the `python` (3.12) command:
 
 ```bash
 # Upgrade pip first
@@ -66,8 +69,8 @@ python -m pip install -r requirements.txt
 Use a venv to isolate development dependencies from the system:
 
 ```bash
-# Create a virtual environment with Python 3.11
-python3.11 -m venv ~/.venv/ansible-dev
+# Create a virtual environment with Python 3.12
+python3.12 -m venv ~/.venv/ansible-dev
 
 # Add activation alias to your shell (optional convenience)
 echo 'alias ansible-dev="source ~/.venv/ansible-dev/bin/activate"' >> ~/.bashrc
@@ -93,7 +96,7 @@ deactivate
 Regardless of which method you chose:
 
 ```bash
-ansible --version      # Should show Python 3.11.x
+ansible --version      # Should show Python 3.12.x
 ansible-lint --version
 yamllint --version
 pre-commit --version
