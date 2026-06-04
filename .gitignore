@@ -108,3 +108,7 @@ docs/
 
 # Ansible-lint local cache
 .ansible/
+
+# Python virtual environments (local dev / CI-parity reproduction)
+.venv/
+venv/

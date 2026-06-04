@@ -1,0 +1,29 @@
+# Requirements source for CI/CD pipeline and local development
+# Last Updated: 04 Jun 2026
+# Classification: UNCLASSIFIED
+#
+# This is the HUMAN-EDITED source of direct dependencies. The locked,
+# hash-pinned requirements.txt is GENERATED from this file; do not edit
+# requirements.txt by hand.
+#
+# To regenerate the lock after changing a pin here:
+#   pip-compile --generate-hashes --output-file=requirements.txt requirements.in
+# Dependabot also regenerates this lock automatically when it bumps a pin
+# (see .github/dependabot.yml).
+
+# Core Ansible
+ansible-core==2.21.0
+
+# Linting (pinned for local/CI parity)
+yamllint==1.38.0
+ansible-lint==26.4.0
+
+# Pre-commit hooks
+pre-commit==4.6.0
+
+# Testing
+molecule==26.4.0
+molecule-plugins[podman]==25.8.12
+
+# Additional collections support
+jmespath==1.1.0
