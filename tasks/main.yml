@@ -214,11 +214,16 @@
 # STIG ID: RHEL-09-215105    Group ID: V-258241
 # Rule Title: RHEL 9 must implement a FIPS 140-3-compliant systemwide
 #   cryptographic policy.
-# Severity: CAT II
+# Severity: CAT I (raised from CAT II in RHEL 9 STIG V2R8, 01 Apr 2026;
+#   check/fix text unchanged - DISA elevated the risk rating only)
 # Note: Default policy is FIPS:AD-SUPPORT which maintains FIPS 140-3
 #   compliance while enabling Kerberos interoperability with Active Directory.
 #   The underlying crypto modules remain FIPS-validated; only Kerberos gets
-#   RC4 exception for AD compatibility. See README.md for exemption details.
+#   an RC4 exception for AD compatibility. AD support is mandatory in target
+#   environments, so this is a required exemption, not a convenience. The STIG
+#   check explicitly accepts any FIPS:<subpolicy> form, so FIPS:AD-SUPPORT is
+#   compliant; the RC4-for-Kerberos exception is a documented CAT I exemption.
+#   See README.md for exemption details.
 # Container Note: In containers without kernel FIPS mode, update-crypto-policies
 #   may return rc=3 even when the policy is set. We check the state file for
 #   idempotence rather than command output.
@@ -232,7 +237,7 @@
   tags:
     - RHEL-09-215105
     - crypto
-    - CAT II
+    - CAT I
 
 - name: RHEL-09-215105 | Set system-wide cryptographic policy
   ansible.builtin.command:
@@ -248,7 +253,7 @@
   tags:
     - RHEL-09-215105
     - crypto
-    - CAT II
+    - CAT I
 
 ###########################################################
 # STIG ID: RHEL-09-213040    Group ID: V-257802
@@ -711,7 +716,7 @@
 #   DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3
 #   validated cryptographic hash algorithms to protect the confidentiality
 #   of SSH client connections.
-# Severity: CAT II
+# Severity: CAT I (raised from CAT II in RHEL 9 STIG V2R8, 01 Apr 2026)
 # Note: OSCAP checks require MACs in specific order. The crypto policy
 #   backend file is used rather than sshd_config per STIG guidance.
 ###########################################################
@@ -731,14 +736,14 @@
   tags:
     - RHEL-09-255070
     - ssh
-    - CAT II
+    - CAT I
 
 ###########################################################
 # STIG ID: RHEL-09-255075    Group ID: V-257991
 # Rule Title: The RHEL 9 SSH server must be configured to use only Message
 #   Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic
 #   hash algorithms to protect the confidentiality of SSH server connections.
-# Severity: CAT II
+# Severity: CAT I (raised from CAT II in RHEL 9 STIG V2R8, 01 Apr 2026)
 # Note: OSCAP checks require MACs in specific order. The crypto policy
 #   backend file is used rather than sshd_config per STIG guidance.
 ###########################################################
@@ -758,7 +763,7 @@
   tags:
     - RHEL-09-255075
     - ssh
-    - CAT II
+    - CAT I
 
 ###########################################################
 # STIG ID: RHEL-09-255070    Group ID: V-270178
@@ -766,7 +771,7 @@
 #   DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3
 #   validated cryptographic hash algorithms to protect the confidentiality
 #   of SSH client connections.
-# Severity: CAT II
+# Severity: CAT I (raised from CAT II in RHEL 9 STIG V2R8, 01 Apr 2026)
 # Note: MACs in ssh_config override crypto policy. Remove to ensure policy
 #   backend settings take effect.
 ###########################################################
@@ -780,14 +785,14 @@
   tags:
     - RHEL-09-255070
     - ssh
-    - CAT II
+    - CAT I
 
 ###########################################################
 # STIG ID: RHEL-09-255075    Group ID: V-257991
 # Rule Title: The RHEL 9 SSH server must be configured to use only Message
 #   Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic
 #   hash algorithms to protect the confidentiality of SSH server connections.
-# Severity: CAT II
+# Severity: CAT I (raised from CAT II in RHEL 9 STIG V2R8, 01 Apr 2026)
 # Note: MACs in sshd_config override crypto policy. Remove to ensure policy
 #   backend settings take effect.
 ###########################################################
@@ -803,7 +808,7 @@
   tags:
     - RHEL-09-255075
     - ssh
-    - CAT II
+    - CAT I
 
 ###########################################################
 # STIG ID: RHEL-09-252040    Group ID: V-257949

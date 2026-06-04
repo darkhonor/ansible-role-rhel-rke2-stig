@@ -3,16 +3,16 @@
 [![CI](https://github.com/darkhonor/ansible-role-rhel-rke2-stig/actions/workflows/ci.yml/badge.svg)](https://github.com/darkhonor/ansible-role-rhel-rke2-stig/actions/workflows/ci.yml)
 [![Ansible Galaxy](https://img.shields.io/badge/galaxy-darkhonor.rhel__rke2__stig-blue.svg)](https://galaxy.ansible.com/darkhonor/rhel_rke2_stig)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![RHEL 9 STIG](https://img.shields.io/badge/RHEL%209%20STIG-V2R7-green.svg)](https://public.cyber.mil/stigs/)
-[![RKE2 STIG](https://img.shields.io/badge/RKE2%20STIG-V2R5-green.svg)](https://public.cyber.mil/stigs/)
+[![RHEL 9 STIG](https://img.shields.io/badge/RHEL%209%20STIG-V2R8-green.svg)](https://public.cyber.mil/stigs/)
+[![RKE2 STIG](https://img.shields.io/badge/RKE2%20STIG-V2R6-green.svg)](https://public.cyber.mil/stigs/)
 [![Container SRG](https://img.shields.io/badge/Container%20SRG-V2R4-green.svg)](https://public.cyber.mil/stigs/)
 
 Supplementary Ansible role for enforcing DISA STIG compliance on RHEL 9/10
 systems running RKE2 or K3S Kubernetes distributions.
 
 **Current STIG Baselines:**
-- RHEL 9 V2R7 (Released: 05 Jan 2026)
-- RKE2 V2R5 (Released: 05 Jan 2026)
+- RHEL 9 V2R8 (Released: 01 Apr 2026)
+- RKE2 V2R6 (Released: 01 Apr 2026)
 - Container Platform SRG V2R4 (Released: 28 Oct 2025)
 
 ## Overview
@@ -74,7 +74,7 @@ This role currently addresses **81 STIG findings**:
 
 | STIG ID | Severity | Description |
 |---------|----------|-------------|
-| RHEL-09-215105 | CAT II | FIPS 140-3 compliant cryptographic policy (configurable) |
+| RHEL-09-215105 | CAT I | FIPS 140-3 compliant cryptographic policy (configurable) |
 
 ### Password Policy (4 findings)
 
@@ -90,8 +90,8 @@ This role currently addresses **81 STIG findings**:
 | STIG ID | Severity | Description |
 |---------|----------|-------------|
 | RHEL-09-255035 | CAT II | SSH public key authentication enabled |
-| RHEL-09-255070 | CAT II | SSH client MACs (FIPS 140-3 validated algorithms) |
-| RHEL-09-255075 | CAT II | SSH server MACs (FIPS 140-3 validated algorithms) |
+| RHEL-09-255070 | CAT I | SSH client MACs (FIPS 140-3 validated algorithms) |
+| RHEL-09-255075 | CAT I | SSH server MACs (FIPS 140-3 validated algorithms) |
 | RHEL-09-255095 | CAT II | SSH ClientAliveCountMax (terminate unresponsive connections) |
 | RHEL-09-255100 | CAT II | SSH ClientAliveInterval (10 minute max idle timeout) |
 
@@ -202,7 +202,7 @@ System Security Officer (ISSO) and documented in the System Security Plan (SSP).
 | [RHEL-09-251020](#rhel-09-251015--rhel-09-251020-firewalld-service) | V-257937 | CAT II | Firewall deny-all policy required | Consequent to RHEL-09-251015 |
 | [RHEL-09-215025](#rhel-09-215025--rhel-09-215045-nfs-utils-and-gssproxy) | V-257828 | CAT II | nfs-utils must not be installed | Required for Longhorn CSI storage |
 | [RHEL-09-215045](#rhel-09-215025--rhel-09-215045-nfs-utils-and-gssproxy) | V-257832 | CAT II | gssproxy must not be installed | Dependency of nfs-utils |
-| [RHEL-09-215105](#rhel-09-215105-fips-cryptographic-policy) | V-258241 | CAT II | FIPS 140-3 cryptographic policy | AD-SUPPORT subpolicy for IPA/AD |
+| [RHEL-09-215105](#rhel-09-215105-fips-cryptographic-policy) | V-258241 | CAT I | FIPS 140-3 cryptographic policy | AD-SUPPORT subpolicy for IPA/AD |
 
 ---
 
@@ -932,9 +932,16 @@ Risk Acceptance: [ISSO Signature and Date]
 |-------|-------|
 | **STIG ID** | RHEL-09-215105 |
 | **Group ID** | V-258241 |
-| **Severity** | CAT II (Medium) |
+| **Severity** | CAT I (High) - raised from CAT II in RHEL 9 STIG V2R8 (01 Apr 2026); check/fix text unchanged |
 | **Rule Title** | RHEL 9 must implement a FIPS 140-3-compliant systemwide cryptographic policy |
 | **Status** | COMPLIANT (with documentation for assessors) |
+
+> **CAT I note:** As of RHEL 9 STIG V2R8 this is a CAT I (High) finding (DISA
+> elevated the risk rating; the technical requirement did not change). The
+> `FIPS:AD-SUPPORT` rationale below is the documented exemption justification.
+> Active Directory interoperability is a mandatory requirement in the target
+> environment, and the STIG check explicitly accepts any `FIPS:<subpolicy>`
+> form, so this configuration remains compliant.
 
 #### STIG Requirement
 
@@ -1241,8 +1248,8 @@ Automated testing runs on every push and pull request:
 
 ## Compliance References
 
-- [RHEL 9 STIG V2R7](https://public.cyber.mil/stigs/) - Primary OS hardening (Released: 05 Jan 2026)
-- [RKE2 STIG V2R5](https://public.cyber.mil/stigs/) - Kubernetes controls (Released: 05 Jan 2026)
+- [RHEL 9 STIG V2R8](https://public.cyber.mil/stigs/) - Primary OS hardening (Released: 01 Apr 2026)
+- [RKE2 STIG V2R6](https://public.cyber.mil/stigs/) - Kubernetes controls (Released: 01 Apr 2026)
 - [Container Platform SRG V2R4](https://public.cyber.mil/stigs/) - Container runtime (Released: 28 Oct 2025)
 - [NIST SP 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final) - Control framework
 - [FIPS 140-2/140-3](https://csrc.nist.gov/projects/cryptographic-module-validation-program) - Cryptographic requirements
@@ -1277,6 +1284,24 @@ findings from outdated baselines and understand rule evolution. See
 > **Automated Scanning:** For detailed analysis of OpenSCAP scanner gaps,
 > false positives, and manual check scripts for rules not covered by automated
 > scanners, see [AutomatedScans.md](AutomatedScans.md).
+
+### RHEL 9 STIG: V2R7 → V2R8 (April 2026)
+
+| STIG ID | Change | Category | Description |
+|---------|--------|----------|-------------|
+| RHEL-09-215105 | Severity | CAT II → CAT I | FIPS systemwide crypto policy (implemented) |
+| RHEL-09-255070 | Severity | CAT II → CAT I | SSH client FIPS MACs (implemented) |
+| RHEL-09-255075 | Severity | CAT II → CAT I | SSH server FIPS MACs (implemented) |
+
+**26 rules** modified (0 added, 0 removed). 8 FIPS/crypto rules were raised from
+CAT II to CAT I; 3 of those are implemented by this role (above). Check/fix text
+is unchanged, so remediation logic is unaffected — only the risk rating and the
+role's severity metadata were updated.
+
+### RKE2 STIG: V2R5 → V2R6 (April 2026)
+
+5 rules received check/fix procedure updates (0 added, 0 removed, no severity
+changes). None are implemented by this role; no impact to coverage.
 
 ### RHEL 9 STIG: V2R6 → V2R7 (January 2026)
 
