@@ -17,11 +17,13 @@ driver:
 
 platforms:
   - name: rhel9-stig
-    # Rocky Linux 9: downstream bug-for-bug RHEL 9 rebuild (higher STIG
-    # fidelity than upstream CentOS Stream). Ships BaseOS/AppStream
-    # preconfigured with GPG keys, so no external repos or key fetches are
-    # needed in prepare.yml. quay.io avoids Docker Hub anonymous pull limits.
-    image: quay.io/rockylinux/rockylinux:9@sha256:53f4c6dcb34e1403bd93207351f0af9a593610faeb7165cb8a037346765199b0
+    # Rocky Linux 9 (ubi-init): downstream bug-for-bug RHEL 9 rebuild (higher
+    # STIG fidelity than upstream CentOS Stream). The -ubi-init variant ships
+    # systemd as PID 1 (/usr/sbin/init) for service-management testing, with
+    # Rocky's full repos preconfigured (GPG keys included), so no external
+    # repos or key fetches are needed in prepare.yml. quay.io avoids Docker Hub
+    # anonymous pull limits.
+    image: quay.io/rockylinux/rockylinux:9-ubi-init@sha256:7ed1505fecd6146137c2cdc7e1cd89c55f23cc9ca6480ede3f8b55bb1be848ad
     pre_build_image: true
     privileged: true
     command: /usr/sbin/init

@@ -140,14 +140,14 @@ jobs:
       - name: Test Podman container creation
         run: |
           # Pull and test Rocky Linux 9 (same image Molecule uses below)
-          podman pull quay.io/rockylinux/rockylinux:9@sha256:53f4c6dcb34e1403bd93207351f0af9a593610faeb7165cb8a037346765199b0
+          podman pull quay.io/rockylinux/rockylinux:9-ubi-init@sha256:7ed1505fecd6146137c2cdc7e1cd89c55f23cc9ca6480ede3f8b55bb1be848ad
           # Test basic container creation with systemd
           podman run --rm -d --name test-systemd \
             --privileged \
             --cgroupns=host \
             --tmpfs /run --tmpfs /tmp \
             --cap-add SYS_ADMIN --cap-add AUDIT_WRITE --cap-add AUDIT_CONTROL \
-            quay.io/rockylinux/rockylinux:9@sha256:53f4c6dcb34e1403bd93207351f0af9a593610faeb7165cb8a037346765199b0 /usr/sbin/init
+            quay.io/rockylinux/rockylinux:9-ubi-init@sha256:7ed1505fecd6146137c2cdc7e1cd89c55f23cc9ca6480ede3f8b55bb1be848ad /usr/sbin/init
           sleep 5
           podman exec test-systemd systemctl status || true
           podman stop test-systemd || true
