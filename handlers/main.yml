@@ -17,7 +17,18 @@
 - name: Reload auditd rules
   ansible.builtin.command:
     cmd: augenrules --load
+  register: augenrules_load
   changed_when: true
+  # The RKE2 audit rules watch runtime paths (/etc/rancher, /var/lib/rancher/...,
+  # /run/k3s/..., rke2 unit files) that do not exist until RKE2 is installed. When
+  # this role runs as a build-time pre-stage (golden image) rather than runtime
+  # enforcement on a live node, augenrules loads every other rule but returns rc=1
+  # for those missing-path watches; they activate once their paths exist. Tolerate
+  # ONLY that missing-path case - any other augenrules error (e.g. a malformed
+  # rule) still fails. Mirrors the build/container tolerance on "Reload sysctl".
+  failed_when:
+    - augenrules_load.rc != 0
+    - "'No such file or directory' not in augenrules_load.stderr"
   when: auditd_active.rc == 0
   listen: Reload auditd rules
 
