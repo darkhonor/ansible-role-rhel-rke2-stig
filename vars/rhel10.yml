@@ -498,7 +498,12 @@ rhel_rke2_stig_audit_rules:
   # STIG ID: RHEL-10-500690    Group ID: V-281155
   # Severity: CAT II
   # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/sudoers.d/
-  #   -p wa -k identity").
+  #   -p wa -k identity"). The DISA R10 V1R1 fix/check text specifies
+  #   "-F path=/etc/sudoers.d/" (trailing slash), but the audit kernel rejects a
+  #   trailing-slash directory path with EINVAL ("Invalid argument"), aborting the
+  #   auditctl -R load of every rule after it. We drop the trailing slash; the
+  #   rule then loads and still satisfies the STIG check (auditctl -l | grep
+  #   /etc/sudoers.d). Upstream DISA defect (V-281155); tracked in #22.
   - stig_id: "RHEL-10-500690"
     group_id: "V-281155"
     rule_title: >
@@ -507,8 +512,8 @@ rhel_rke2_stig_audit_rules:
       "/etc/sudoers.d/" directory.
     severity: "CAT II"
     audit_rule: |
-      -a always,exit -F arch=b32 -F path=/etc/sudoers.d/ -F perm=wa -F key=identity
-      -a always,exit -F arch=b64 -F path=/etc/sudoers.d/ -F perm=wa -F key=identity
+      -a always,exit -F arch=b32 -F path=/etc/sudoers.d -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/etc/sudoers.d -F perm=wa -F key=identity
 
   # STIG ID: RHEL-10-500700    Group ID: V-281156
   # Severity: CAT II
