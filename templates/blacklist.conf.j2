@@ -1,13 +1,13 @@
 ###############################################################################
 # Filename: /etc/modprobe.d/blacklist.conf
-# Summary: RHEL 9 STIG Kernel Module Blacklist
+# Summary: RHEL STIG Kernel Module Blacklist
 # Severity: CAT II / CAT III
 # Last Updated: 23 Jan 2026
 # Classification: UNCLASSIFIED
 #
 # This file is managed by Ansible. Manual changes will be overwritten.
 ###############################################################################
-{% for module in rhel9_rke2_stig_blacklist_modules %}
+{% for module in rhel_rke2_stig_blacklist_modules %}
 ###########################################################
 # STIG-ID: {{ module.stig_id }}    Group ID: {{ module.group_id }}
 # Rule Title: {{ module.rule_title }}
