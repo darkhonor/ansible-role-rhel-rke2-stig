@@ -4,6 +4,7 @@
 [![Ansible Galaxy](https://img.shields.io/badge/galaxy-darkhonor.rhel__rke2__stig-blue.svg)](https://galaxy.ansible.com/darkhonor/rhel_rke2_stig)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![RHEL 9 STIG](https://img.shields.io/badge/RHEL%209%20STIG-V2R8-green.svg)](https://public.cyber.mil/stigs/)
+[![RHEL 10 STIG](https://img.shields.io/badge/RHEL%2010%20STIG-V1R1-green.svg)](https://public.cyber.mil/stigs/)
 [![RKE2 STIG](https://img.shields.io/badge/RKE2%20STIG-V2R6-green.svg)](https://public.cyber.mil/stigs/)
 [![Container SRG](https://img.shields.io/badge/Container%20SRG-V2R4-green.svg)](https://public.cyber.mil/stigs/)
 
@@ -12,8 +13,14 @@ systems running RKE2 or K3S Kubernetes distributions.
 
 **Current STIG Baselines:**
 - RHEL 9 V2R8 (Released: 01 Apr 2026)
+- RHEL 10 V1R1 (initial release)
 - RKE2 V2R6 (Released: 01 Apr 2026)
 - Container Platform SRG V2R4 (Released: 28 Oct 2025)
+
+The role auto-detects the target's RHEL-family major version and applies the
+matching OS baseline (RHEL 9 V2R8 or RHEL 10 V1R1). See
+[RHEL 10 STIG Support](#rhel-10-stig-support) for the version-gating model and
+the RHEL 9 to RHEL 10 differences.
 
 ## Overview
 
@@ -51,22 +58,92 @@ collections:
 
 ## Role Variables
 
-### Static Variables (vars/main.yml)
+### Version-Specific Static Data (vars/rhel9.yml, vars/rhel10.yml)
 
-These variables define STIG-required configurations and should not typically be
-modified:
+The role loads the audit-rule and kernel-blacklist data set for the detected
+RHEL-family major version (`include_vars vars/rhel<major>.yml`). These define
+STIG-required configurations and are not typically modified:
 
 | Variable | Description |
 |----------|-------------|
-| `rhel9_rke2_stig_audit_rules` | List of 50 audit rule definitions with STIG metadata |
-| `rhel9_rke2_stig_blacklist_modules` | List of 8 kernel modules to blacklist |
+| `rhel_rke2_stig_audit_rules` | Audit rule definitions with STIG metadata (RHEL 9 and RHEL 10 each ship 50 rules, mapped to their version's STIG IDs) |
+| `rhel_rke2_stig_blacklist_modules` | List of 8 kernel modules to blacklist |
+
+`vars/main.yml` holds only the shared constant `rhel_rke2_stig_supported_majors`
+(`["9", "10"]`).
 
 ### Default Variables (defaults/main.yml)
 
-*Note: Default variables for enabling/disabling specific controls will be added
-in future releases.*
+These tunables enable/disable controls or set their values. The full list with
+inline documentation is in `defaults/main.yml`; the most commonly adjusted:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `rhel_rke2_stig_crypto_policy` | `FIPS:AD-SUPPORT` | System-wide crypto policy for AD/IdP integration (see [RHEL-09-215105](#rhel-09-215105-fips-cryptographic-policy)) |
+| `rhel_rke2_stig_rp_filter_all` | `"2"` | RHEL 10 only: `net.ipv4.conf.all.rp_filter` (loose by default; STIG strict is `"1"`) |
+| `rhel_rke2_stig_ipv6_enabled` | `false` | RHEL 10 only: enable IPv6 forwarding as a dual-stack RKE2 exemption |
+| `rhel_rke2_stig_smartcard_enabled` | `false` | CAC smart card driver (RHEL-09-611160) |
+| `rhel_rke2_stig_sssd_enabled` | `false` | SSSD certificate mapping / cached-credential expiry |
+| `rhel_rke2_stig_orphan_files_enabled` | `false` | Orphaned-file remediation (off; can break applications) |
+| `rhel_rke2_stig_<area>_enabled` | `true` | Per-area on/off toggles (ssh, pam, fapolicyd, postfix, file_permissions, ...) |
+
+## RHEL 10 STIG Support
+
+This role supports both RHEL 9 (DISA STIG V2R8) and RHEL 10 (DISA STIG V1R1),
+selected automatically from the target's `ansible_distribution_major_version`:
+
+- `tasks/main.yml` asserts the host is RHEL-family and a supported major (`9` or
+  `10`), then loads `vars/rhel<major>.yml` (the version's audit rules + blacklist).
+- The version-varying audit-rule and blacklist data is selected by the
+  `include_vars` above. Controls that are entirely new to RHEL 10 (the
+  `all.rp_filter` and IPv6-forwarding sysctls) are additionally gated with
+  `when: ansible_distribution_major_version is version('10', '>=')`.
+- Per-control task tags use the RHEL 9 STIG IDs as a stable namespace across both
+  versions (e.g. `--tags RHEL-09-611075`); on RHEL 10 the task applies the mapped
+  RHEL 10 control. Area tags (`audit`, `kernel`, `ssh`, `sysctl`, `rke2`, ...) and
+  full-role runs work on all supported versions. RHEL 10 STIG IDs are not tag
+  selectors.
+- RHEL 9 behavior is unchanged by the addition of RHEL 10 support.
+
+### What differs on RHEL 10 (V1R1)
+
+| Area | RHEL 9 (V2R8) | RHEL 10 (V1R1) |
+|------|---------------|----------------|
+| Audit rule IDs | RHEL-09-654010 - 654255 | RHEL-10-500300 - 500810 (50 rules) |
+| Identity-file audit | `-w <path> -p wa` watch form | `-F path=<path> -F perm=wa` syscall pairs (b32/b64) |
+| chmod audit | `chmod,fchmod,fchmodat` | adds `fchmodat2` syscall |
+| rename/delete audit | `rename,...,unlinkat` | adds `renameat2` syscall |
+| `all.rp_filter` | not required | RHEL-10-800130 (applied permissively; see below) |
+| IPv6 forwarding | n/a | RHEL-10-800250 (toggle; STIG-enforced off by default) |
+| User namespaces | RHEL-09-213105 exemption | control retired in V1R1; setting kept operationally |
+| Kernel blacklist | 8 modules | same 8 (atm/firewire-core/cramfs retired in V1R1 but kept as defense-in-depth) |
+
+### RHEL 10 operational notes
+
+- **`all.rp_filter` is applied permissively** (`rhel_rke2_stig_rp_filter_all`,
+  default loose `"2"`) rather than STIG-strict (`"1"`), because strict
+  reverse-path filtering can drop asymmetrically-routed RKE2/CNI traffic. Set to
+  `"1"` after validating on your cluster.
+- **IPv6 forwarding is disabled by default** (STIG-compliant). Set
+  `rhel_rke2_stig_ipv6_enabled: true` to enable it as a documented dual-stack
+  exemption (mirrors the IPv4 forwarding exemption).
+
+### Corrected DISA V1R1 source defects
+
+Two RHEL 10 V1R1 audit fix-text entries specify rules the audit kernel rejects on
+load; the role ships the corrected, loadable form (which still satisfies each
+rule's own STIG check text) with the deviation documented inline:
+
+- **RHEL-10-500720** (`/etc/opasswd`): fix text has a stray `(` before the b64
+  path. Tracked in issue #21.
+- **RHEL-10-500690** (`/etc/sudoers.d/`): fix text uses a trailing-slash directory
+  path that yields `EINVAL` on load. Tracked in issue #22.
 
 ## STIG Coverage
+
+The STIG IDs below are shown with their **RHEL 9 (V2R8)** identifiers. On RHEL 10
+the role applies the equivalent **RHEL 10 (V1R1)** controls automatically; see
+[RHEL 10 STIG Support](#rhel-10-stig-support) for the ID mapping and differences.
 
 This role currently addresses **81 STIG findings**:
 
@@ -1243,12 +1320,14 @@ Automated testing runs on every push and pull request:
 
 - **Linting:** yamllint, ansible-lint
 - **Syntax:** ansible-playbook --syntax-check
-- **Integration:** Molecule with Rocky Linux 9 container
+- **Integration:** Molecule with Rocky Linux 9 container (the RHEL 10 path is
+  live-validated on Rocky 10; a Rocky 10 Molecule platform is a planned follow-up)
 - **Security:** Trivy vulnerability scanning
 
 ## Compliance References
 
-- [RHEL 9 STIG V2R8](https://public.cyber.mil/stigs/) - Primary OS hardening (Released: 01 Apr 2026)
+- [RHEL 9 STIG V2R8](https://public.cyber.mil/stigs/) - OS hardening, RHEL 9 targets (Released: 01 Apr 2026)
+- [RHEL 10 STIG V1R1](https://public.cyber.mil/stigs/) - OS hardening, RHEL 10 targets
 - [RKE2 STIG V2R6](https://public.cyber.mil/stigs/) - Kubernetes controls (Released: 01 Apr 2026)
 - [Container Platform SRG V2R4](https://public.cyber.mil/stigs/) - Container runtime (Released: 28 Oct 2025)
 - [NIST SP 800-53 Rev 5](https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final) - Control framework
