@@ -6,6 +6,31 @@
 # Last Updated: 23 Jan 2026
 # Classification: UNCLASSIFIED
 ###############################################################################
+
+###########################################################
+# Version gating: validate the OS and load the matching STIG
+# dataset (audit rules + kernel blacklist) for this RHEL-family
+# major version. Shared scalar values live in defaults/main.yml;
+# version-varying data lives in vars/rhel9.yml and vars/rhel10.yml.
+###########################################################
+- name: Validate supported RHEL-family OS version
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "RedHat"
+      - ansible_distribution_major_version in rhel_rke2_stig_supported_majors
+    fail_msg: >-
+      ansible-role-rhel-rke2-stig supports RHEL-family majors
+      {{ rhel_rke2_stig_supported_majors | join(', ') }} only (detected
+      {{ ansible_distribution }} {{ ansible_distribution_major_version }}).
+    quiet: true
+  tags:
+    - always
+
+- name: Load version-specific STIG dataset (audit rules, kernel blacklist)
+  ansible.builtin.include_vars: "{{ role_path }}/vars/rhel{{ ansible_distribution_major_version }}.yml"
+  tags:
+    - always
+
 ###########################################################
 # STIG ID: RHEL-09-611075    Group ID: V-258104
 # Rule Title: RHEL 9 passwords for new users or password changes must have a 24
@@ -1085,4 +1110,56 @@
     - firewall
     - RHEL-09-251015
     - RHEL-09-251020
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-10-800130    Group ID: V-281345    (RHEL 10 only)
+# Rule Title: RHEL 10 must use a reverse-path filter for IPv4 network traffic
+#   on all interfaces. PERMISSIVE DEVIATION: the STIG requires strict (1), but
+#   strict RPF can disrupt RKE2/CNI asymmetric routing, so this is applied at
+#   rhel_rke2_stig_rp_filter_all (default loose=2) until validated on a live
+#   cluster. Written to /etc/sysctl.conf so it wins over the STIG base (loaded
+#   last). Tighten to "1" after validation. No RHEL 9 equivalent control.
+# Severity: CAT II
+###########################################################
+- name: RHEL-10-800130 | Set net.ipv4.conf.all.rp_filter (permissive until validated)
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.all.rp_filter
+    value: "{{ rhel_rke2_stig_rp_filter_all }}"
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: false
+  notify: Reload sysctl
+  when: ansible_distribution_major_version is version('10', '>=')
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-10-800130
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-10-800250    Group ID: V-281357    (RHEL 10 only)
+# Rule Title: RHEL 10 must not enable IPv6 packet forwarding unless the system
+#   is a router. Default (rhel_rke2_stig_ipv6_enabled=false) enforces the STIG
+#   (=0). When true, IPv6 forwarding is enabled (=1) for dual-stack RKE2 as a
+#   documented exemption (mirrors the IPv4 forwarding exemption). Written to
+#   /etc/sysctl.conf so it wins over the STIG base. No RHEL 9 equivalent control.
+# Severity: CAT II
+###########################################################
+- name: RHEL-10-800250 | Set IPv6 forwarding (0=STIG default, 1=RKE2 dual-stack exemption)
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "{{ '1' if rhel_rke2_stig_ipv6_enabled | bool else '0' }}"
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: false
+  loop:
+    - net.ipv6.conf.all.forwarding
+    - net.ipv6.conf.default.forwarding
+  notify: Reload sysctl
+  when: ansible_distribution_major_version is version('10', '>=')
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-10-800250
     - CAT II

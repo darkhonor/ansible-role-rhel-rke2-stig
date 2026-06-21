@@ -39,12 +39,21 @@ net.ipv4.conf.all.forwarding = 1
 net.ipv4.conf.default.forwarding = 1
 
 ###############################################################################
-## IPv6 Forwarding (if dual-stack Kubernetes is deployed)
-## Uncomment if your cluster uses IPv6 pod networking.
+## IPv6 Forwarding (dual-stack Kubernetes)
+## Controlled by the rhel_rke2_stig_ipv6_enabled role variable. When enabled,
+## IPv6 forwarding is also written to /etc/sysctl.conf (the authoritative,
+## last-loaded file) by the role. RHEL 10 STIG RHEL-10-800250 requires
+## net.ipv6.conf.all.forwarding = 0; the enabled case is a documented
+## dual-stack exemption.
 ###############################################################################
 
+{% if rhel_rke2_stig_ipv6_enabled %}
+net.ipv6.conf.all.forwarding = 1
+net.ipv6.conf.default.forwarding = 1
+{% else %}
 # net.ipv6.conf.all.forwarding = 1
 # net.ipv6.conf.default.forwarding = 1
+{% endif %}
 
 ###############################################################################
 ## RHEL-09-213105 EXEMPTION: User Namespaces

@@ -23,7 +23,7 @@ platforms:
     # Rocky's full repos preconfigured (GPG keys included), so no external
     # repos or key fetches are needed in prepare.yml. quay.io avoids Docker Hub
     # anonymous pull limits.
-    image: quay.io/rockylinux/rockylinux:9-ubi-init@sha256:7ed1505fecd6146137c2cdc7e1cd89c55f23cc9ca6480ede3f8b55bb1be848ad
+    image: quay.io/rockylinux/rockylinux:9-ubi-init@sha256:9dff2616de511bf835547609d48000f99e17b6400c828e92dea2df0f4a8bd575
     pre_build_image: true
     privileged: true
     command: /usr/sbin/init

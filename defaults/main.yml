@@ -226,3 +226,22 @@ rhel_rke2_stig_postfix_enabled: true
 # SMTP client restrictions to prevent open relay
 # STIG requires: permit_mynetworks,reject (at minimum)
 rhel_rke2_stig_postfix_client_restrictions: "permit_mynetworks,reject"
+
+###############################################################################
+# Reverse-Path Filter on all interfaces (RHEL 10: RHEL-10-800130 / V-281345)
+# RHEL 10 only (RHEL 9 has no equivalent control and is unaffected).
+# The STIG requires strict RPF (1) on all interfaces. Strict RPF can drop
+# asymmetrically-routed RKE2/CNI pod traffic, so this defaults to loose (2) -
+# "do no harm" until validated on a live cluster. Tighten to "1" (STIG strict)
+# once confirmed safe with your CNI. Values: 0=off, 1=strict, 2=loose.
+###############################################################################
+rhel_rke2_stig_rp_filter_all: "2"
+
+###############################################################################
+# IPv6 forwarding toggle (RHEL 10 control: RHEL-10-800250 / V-281357 requires
+# net.ipv6.conf.all.forwarding = 0).
+# Default false enforces the STIG for the common IPv4-only cluster. Set true for
+# dual-stack RKE2: IPv6 forwarding is enabled as a documented exemption,
+# mirroring the IPv4 forwarding exemption (RHEL-09-253075 / RHEL-10-800210).
+###############################################################################
+rhel_rke2_stig_ipv6_enabled: false
