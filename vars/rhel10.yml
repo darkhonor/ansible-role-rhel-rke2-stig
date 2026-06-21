@@ -1,0 +1,715 @@
+---
+###############################################################################
+# Filename: vars/rhel10.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: Fixed variables for RHEL RKE2 STIG compliance - RHEL 10 (V1R1) dataset -
+#   contains audit rules and kernel module blacklist for RHEL 10 systems
+# Last Updated: 21 Jun 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+rhel_rke2_stig_audit_rules:
+  # STIG ID: RHEL-10-500300    Group ID: V-281116
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500300"
+    group_id: "V-281116"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "execve" system call.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k execpriv
+      -a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k execpriv
+      -a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -k execpriv
+      -a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -k execpriv
+
+  # STIG ID: RHEL-10-500780    Group ID: V-281163
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500780"
+    group_id: "V-281163"
+    rule_title: >
+      RHEL 10 must generate audit records for all uses of the "chmod",
+      "fchmod", "fchmodat", and "fchmodat2" syscalls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S chmod,fchmod,fchmodat,fchmodat2 -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b64 -S chmod,fchmod,fchmodat,fchmodat2 -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-10-500790    Group ID: V-281164
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500790"
+    group_id: "V-281164"
+    rule_title: >
+      RHEL 10 must generate audit records for all uses of the "chown",
+      "fchown", "fchownat", and "lchown" syscalls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S chown,fchown,fchownat,lchown -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b64 -S chown,fchown,fchownat,lchown -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-10-500310    Group ID: V-281117
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500310"
+    group_id: "V-281117"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "setxattr", "fsetxattr", "lsetxattr", "removexattr",
+      "fremovexattr", and "lremovexattr" system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b64 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid>=1000 -F auid!=unset -k perm_mod
+      -a always,exit -F arch=b32 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid=0 -k perm_mod
+      -a always,exit -F arch=b64 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid=0 -k perm_mod
+
+  # STIG ID: RHEL-10-500320    Group ID: V-281118
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500320"
+    group_id: "V-281118"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of "umount" system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/umount -F perm=x -F auid>=1000 -F auid!=unset -k privileged-mount
+
+  # STIG ID: RHEL-10-500330    Group ID: V-281119
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500330"
+    group_id: "V-281119"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "chacl" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-10-500340    Group ID: V-281120
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500340"
+    group_id: "V-281120"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "setfacl" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/setfacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-10-500350    Group ID: V-281121
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500350"
+    group_id: "V-281121"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "chcon" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chcon -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+
+  # STIG ID: RHEL-10-500360    Group ID: V-281122
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500360"
+    group_id: "V-281122"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "semanage" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/semanage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-10-500370    Group ID: V-281123
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500370"
+    group_id: "V-281123"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "setfiles" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/setfiles -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-10-500380    Group ID: V-281124
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500380"
+    group_id: "V-281124"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "setsebool" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/setsebool -F perm=x -F auid>=1000 -F auid!=unset -F key=privileged
+
+  # STIG ID: RHEL-10-500810    Group ID: V-281165
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500810"
+    group_id: "V-281165"
+    rule_title: >
+      RHEL 10 must generate audit records for all uses of the "rename",
+      "unlink", "rmdir", "renameat", "renameat2", and "unlinkat" system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S rename,unlink,rmdir,renameat,renameat2,unlinkat -F auid>=1000 -F auid!=unset -k delete
+      -a always,exit -F arch=b64 -S rename,unlink,rmdir,renameat,renameat2,unlinkat -F auid>=1000 -F auid!=unset -k delete
+
+  # STIG ID: RHEL-10-500390    Group ID: V-281125
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500390"
+    group_id: "V-281125"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "truncate", "ftruncate", "creat", "open", "openat", and
+      "open_by_handle_at" system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -k perm_access
+      -a always,exit -F arch=b64 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EPERM -F auid>=1000 -F auid!=unset -k perm_access
+      -a always,exit -F arch=b32 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -k perm_access
+      -a always,exit -F arch=b64 -S truncate,ftruncate,creat,open,openat,open_by_handle_at -F exit=-EACCES -F auid>=1000 -F auid!=unset -k perm_access
+
+  # STIG ID: RHEL-10-500400    Group ID: V-281126
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500400"
+    group_id: "V-281126"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "delete_module" system call.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S delete_module -F auid>=1000 -F auid!=unset -k module_chng
+      -a always,exit -F arch=b64 -S delete_module -F auid>=1000 -F auid!=unset -k module_chng
+
+  # STIG ID: RHEL-10-500410    Group ID: V-281127
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500410"
+    group_id: "V-281127"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "init_module" and "finit_module" system calls.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S init_module,finit_module -F auid>=1000 -F auid!=unset -k module_chng
+      -a always,exit -F arch=b64 -S init_module,finit_module -F auid>=1000 -F auid!=unset -k module_chng
+
+  # STIG ID: RHEL-10-500420    Group ID: V-281128
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500420"
+    group_id: "V-281128"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "chage" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-chage
+
+  # STIG ID: RHEL-10-500430    Group ID: V-281129
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500430"
+    group_id: "V-281129"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "chsh" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/chsh -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-10-500440    Group ID: V-281130
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500440"
+    group_id: "V-281130"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "crontab" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/crontab -F perm=x -F auid>=1000 -F auid!=unset -k privileged-crontab
+
+  # STIG ID: RHEL-10-500450    Group ID: V-281131
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500450"
+    group_id: "V-281131"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "gpasswd" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-gpasswd
+
+  # STIG ID: RHEL-10-500460    Group ID: V-281132
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500460"
+    group_id: "V-281132"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "kmod" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/kmod -F perm=x -F auid>=1000 -F auid!=unset -k modules
+
+  # STIG ID: RHEL-10-500470    Group ID: V-281133
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500470"
+    group_id: "V-281133"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "newgrp" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-10-500480    Group ID: V-281134
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500480"
+    group_id: "V-281134"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "pam_timestamp_check" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/pam_timestamp_check -F perm=x -F auid>=1000 -F auid!=unset -k privileged-pam_timestamp_check
+
+  # STIG ID: RHEL-10-500490    Group ID: V-281135
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500490"
+    group_id: "V-281135"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "passwd" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/passwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-passwd
+
+  # STIG ID: RHEL-10-500500    Group ID: V-281136
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500500"
+    group_id: "V-281136"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "postdrop" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/postdrop -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-10-500510    Group ID: V-281137
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500510"
+    group_id: "V-281137"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "postqueue" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/postqueue -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-10-500520    Group ID: V-281138
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500520"
+    group_id: "V-281138"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the ssh-agent command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/ssh-agent -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+
+  # STIG ID: RHEL-10-500530    Group ID: V-281139
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500530"
+    group_id: "V-281139"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "ssh-keysign" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/libexec/openssh/ssh-keysign -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+
+  # STIG ID: RHEL-10-500540    Group ID: V-281140
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500540"
+    group_id: "V-281140"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "su" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/su -F perm=x -F auid>=1000 -F auid!=unset -k privileged-priv_change
+
+  # STIG ID: RHEL-10-500550    Group ID: V-281141
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500550"
+    group_id: "V-281141"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "sudo" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-10-500560    Group ID: V-281142
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500560"
+    group_id: "V-281142"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "sudoedit" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/bin/sudoedit -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+
+  # STIG ID: RHEL-10-500570    Group ID: V-281143
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500570"
+    group_id: "V-281143"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "unix_chkpwd" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-10-500580    Group ID: V-281144
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500580"
+    group_id: "V-281144"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "unix_update" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/unix_update -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-10-500590    Group ID: V-281145
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500590"
+    group_id: "V-281145"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "userhelper" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+
+  # STIG ID: RHEL-10-500600    Group ID: V-281146
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500600"
+    group_id: "V-281146"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "usermod" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid>=1000 -F auid!=unset -k privileged-usermod
+
+  # STIG ID: RHEL-10-500610    Group ID: V-281147
+  # Severity: CAT II
+  # NOTE: Body CHANGED vs RHEL 9 - R9 audited the /usr/bin/mount binary
+  #   (-F path=/usr/bin/mount -F perm=x ... -k privileged-mount); R10 audits the
+  #   "mount" syscall (-S mount ... -k export). Transcribed from the R10 fix text.
+  - stig_id: "RHEL-10-500610"
+    group_id: "V-281147"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "mount" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=unset -k export
+      -a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=unset -k export
+
+  # STIG ID: RHEL-10-500620    Group ID: V-281148
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500620"
+    group_id: "V-281148"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "init" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/init -F perm=x -F auid>=1000 -F auid!=unset -k privileged-init
+
+  # STIG ID: RHEL-10-500630    Group ID: V-281149
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500630"
+    group_id: "V-281149"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "poweroff" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/poweroff -F perm=x -F auid>=1000 -F auid!=unset -k privileged-poweroff
+
+  # STIG ID: RHEL-10-500640    Group ID: V-281150
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500640"
+    group_id: "V-281150"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "reboot" command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/reboot -F perm=x -F auid>=1000 -F auid!=unset -k privileged-reboot
+
+  # STIG ID: RHEL-10-500650    Group ID: V-281151
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500650"
+    group_id: "V-281151"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the shutdown command.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F path=/usr/sbin/shutdown -F perm=x -F auid>=1000 -F auid!=unset -k privileged-shutdown
+
+  # STIG ID: RHEL-10-500660    Group ID: V-281152
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500660"
+    group_id: "V-281152"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "umount" system call.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S umount -F auid>=1000 -F auid!=unset -k privileged-umount
+
+  # STIG ID: RHEL-10-500670    Group ID: V-281153
+  # Severity: CAT II
+  - stig_id: "RHEL-10-500670"
+    group_id: "V-281153"
+    rule_title: >
+      RHEL 10 must generate audit records for successful and unsuccessful uses
+      of the "umount2" system call.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -S umount2 -F auid>=1000 -F auid!=unset -k privileged-umount
+      -a always,exit -F arch=b64 -S umount2 -F auid>=1000 -F auid!=unset -k privileged-umount
+
+  # STIG ID: RHEL-10-500680    Group ID: V-281154
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/sudoers -p wa
+  #   -k identity"). Key also changed from "identity" (R9) to "logins" (R10).
+  - stig_id: "RHEL-10-500680"
+    group_id: "V-281154"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/etc/sudoers".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/etc/sudoers -F perm=wa -F key=logins
+      -a always,exit -F arch=b64 -F path=/etc/sudoers -F perm=wa -F key=logins
+
+  # STIG ID: RHEL-10-500690    Group ID: V-281155
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/sudoers.d/
+  #   -p wa -k identity").
+  - stig_id: "RHEL-10-500690"
+    group_id: "V-281155"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect the
+      "/etc/sudoers.d/" directory.
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/etc/sudoers.d/ -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/etc/sudoers.d/ -F perm=wa -F key=identity
+
+  # STIG ID: RHEL-10-500700    Group ID: V-281156
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/group -p wa
+  #   -k identity").
+  - stig_id: "RHEL-10-500700"
+    group_id: "V-281156"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/etc/group".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/etc/group -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/etc/group -F perm=wa -F key=identity
+
+  # STIG ID: RHEL-10-500710    Group ID: V-281157
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/gshadow -p wa
+  #   -k identity").
+  - stig_id: "RHEL-10-500710"
+    group_id: "V-281157"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/etc/gshadow".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/etc/gshadow -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/etc/gshadow -F perm=wa -F key=identity
+
+  # STIG ID: RHEL-10-500720    Group ID: V-281158
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/security/opasswd
+  #   -p wa -k identity"). The DISA RHEL 10 V1R1 *fix* text has a typo - a stray "("
+  #   before the path on the b64 line ("-F path=(/etc/security/opasswd") - which is a
+  #   non-loadable auditctl rule. The rule's *check* text shows the correct form (no
+  #   paren), and the b32 line plus every sibling watch rule confirm it. We ship the
+  #   corrected, loadable rule. Upstream DISA defect (V-281158); tracked in #21.
+  - stig_id: "RHEL-10-500720"
+    group_id: "V-281158"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/etc/opasswd".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/etc/security/opasswd -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/etc/security/opasswd -F perm=wa -F key=identity
+
+  # STIG ID: RHEL-10-500730    Group ID: V-281159
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/passwd -p wa
+  #   -k identity").
+  - stig_id: "RHEL-10-500730"
+    group_id: "V-281159"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/etc/passwd".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/etc/passwd -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/etc/passwd -F perm=wa -F key=identity
+
+  # STIG ID: RHEL-10-500740    Group ID: V-281160
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /etc/shadow -p wa
+  #   -k identity").
+  - stig_id: "RHEL-10-500740"
+    group_id: "V-281160"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/etc/shadow".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/etc/shadow -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/etc/shadow -F perm=wa -F key=identity
+
+  # STIG ID: RHEL-10-500750    Group ID: V-281161
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /var/log/faillock
+  #   -p wa -k logins"). Key changed from "logins" (R9) to "identity" (R10) per
+  #   the R10 fix text.
+  - stig_id: "RHEL-10-500750"
+    group_id: "V-281161"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/var/log/faillock".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/var/log/faillock -F perm=wa -F key=identity
+      -a always,exit -F arch=b64 -F path=/var/log/faillock -F perm=wa -F key=identity
+
+  # STIG ID: RHEL-10-500760    Group ID: V-281162
+  # Severity: CAT II
+  # NOTE: Watch rewritten as syscall rule in R10 (R9 used "-w /var/log/lastlog
+  #   -p wa -k logins").
+  - stig_id: "RHEL-10-500760"
+    group_id: "V-281162"
+    rule_title: >
+      RHEL 10 must generate audit records for all account creations,
+      modifications, disabling, and termination events that affect
+      "/var/log/lastlog".
+    severity: "CAT II"
+    audit_rule: |
+      -a always,exit -F arch=b32 -F path=/var/log/lastlog -F perm=wa -F key=logins
+      -a always,exit -F arch=b64 -F path=/var/log/lastlog -F perm=wa -F key=logins
+
+###############################################################################
+# Kernel Module Blacklist - STIG required modules to disable
+###############################################################################
+rhel_rke2_stig_blacklist_modules:
+  # STIG ID: N/A    Group ID: N/A
+  # Severity: CAT II  (carried from RHEL 9 RHEL-09-213045 / V-257804)
+  # NOTE: No RHEL 10 V1R1 control exists for the ATM module; retained as
+  #   defense-in-depth. Body unchanged.
+  - stig_id: "N/A (no RHEL-10 V1R1 control - retained as defense-in-depth)"
+    group_id: "N/A"
+    rule_title: >
+      Disable the Asynchronous Transfer Mode (ATM) kernel module. Retained
+      proactively as defense-in-depth - no RHEL 10 V1R1 STIG control covers
+      this module (expected to return in a later STIG release). Does not affect
+      RKE2 operation.
+    severity: "CAT II"
+    module_name: "atm"
+
+  # STIG ID: RHEL-10-701100    Group ID: V-281312
+  # Severity: CAT II
+  - stig_id: "RHEL-10-701100"
+    group_id: "V-281312"
+    rule_title: >
+      RHEL 10 must be configured to disable the Controller Area Network (CAN)
+      kernel module.
+    severity: "CAT II"
+    module_name: "can"
+
+  # STIG ID: N/A    Group ID: N/A
+  # Severity: CAT II  (carried from RHEL 9 RHEL-09-213055 / V-257806)
+  # NOTE: No RHEL 10 V1R1 control exists for the FireWire module; retained as
+  #   defense-in-depth. Body unchanged.
+  - stig_id: "N/A (no RHEL-10 V1R1 control - retained as defense-in-depth)"
+    group_id: "N/A"
+    rule_title: >
+      Disable the FireWire (firewire-core) kernel module. Retained proactively
+      as defense-in-depth - no RHEL 10 V1R1 STIG control covers this module
+      (expected to return in a later STIG release). Does not affect RKE2
+      operation.
+    severity: "CAT II"
+    module_name: "firewire-core"
+
+  # STIG ID: RHEL-10-701110    Group ID: V-281313
+  # Severity: CAT II
+  - stig_id: "RHEL-10-701110"
+    group_id: "V-281313"
+    rule_title: >
+      RHEL 10 must disable the Stream Control Transmission Protocol (SCTP)
+      kernel module.
+    severity: "CAT II"
+    module_name: "sctp"
+
+  # STIG ID: RHEL-10-701120    Group ID: V-281314
+  # Severity: CAT II
+  - stig_id: "RHEL-10-701120"
+    group_id: "V-281314"
+    rule_title: >
+      RHEL 10 must disable the Transparent Inter Process Communication (TIPC)
+      kernel module.
+    severity: "CAT II"
+    module_name: "tipc"
+
+  # STIG ID: N/A    Group ID: N/A
+  # Severity: CAT III  (carried from RHEL 9 RHEL-09-231195 / V-257880)
+  # NOTE: No RHEL 10 V1R1 control exists for the cramfs module; retained as
+  #   defense-in-depth. Body unchanged.
+  - stig_id: "N/A (no RHEL-10 V1R1 control - retained as defense-in-depth)"
+    group_id: "N/A"
+    rule_title: >
+      Disable mounting of cramfs (cramfs kernel module). Retained proactively
+      as defense-in-depth - no RHEL 10 V1R1 STIG control covers this module
+      (expected to return in a later STIG release). Does not affect RKE2
+      operation.
+    severity: "CAT III"
+    module_name: "cramfs"
+
+  # STIG ID: RHEL-10-700850    Group ID: V-281288
+  # Severity: CAT II
+  - stig_id: "RHEL-10-700850"
+    group_id: "V-281288"
+    rule_title: >
+      RHEL 10 must be configured to disable USB mass storage.
+    severity: "CAT II"
+    module_name: "usb-storage"
+
+  # STIG ID: RHEL-10-700860    Group ID: V-281289
+  # Severity: CAT II
+  - stig_id: "RHEL-10-700860"
+    group_id: "V-281289"
+    rule_title: >
+      RHEL 10 must disable Bluetooth.
+    severity: "CAT II"
+    module_name: "bluetooth"
