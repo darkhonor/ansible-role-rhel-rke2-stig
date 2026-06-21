@@ -1111,3 +1111,55 @@
     - RHEL-09-251015
     - RHEL-09-251020
     - CAT II
+
+###########################################################
+# STIG ID: RHEL-10-800130    Group ID: V-281345    (RHEL 10 only)
+# Rule Title: RHEL 10 must use a reverse-path filter for IPv4 network traffic
+#   on all interfaces. PERMISSIVE DEVIATION: the STIG requires strict (1), but
+#   strict RPF can disrupt RKE2/CNI asymmetric routing, so this is applied at
+#   rhel_rke2_stig_rp_filter_all (default loose=2) until validated on a live
+#   cluster. Written to /etc/sysctl.conf so it wins over the STIG base (loaded
+#   last). Tighten to "1" after validation. No RHEL 9 equivalent control.
+# Severity: CAT II
+###########################################################
+- name: RHEL-10-800130 | Set net.ipv4.conf.all.rp_filter (permissive until validated)
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.all.rp_filter
+    value: "{{ rhel_rke2_stig_rp_filter_all }}"
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: false
+  notify: Reload sysctl
+  when: ansible_distribution_major_version is version('10', '>=')
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-10-800130
+    - CAT II
+
+###########################################################
+# STIG ID: RHEL-10-800250    Group ID: V-281357    (RHEL 10 only)
+# Rule Title: RHEL 10 must not enable IPv6 packet forwarding unless the system
+#   is a router. Default (rhel_rke2_stig_ipv6_enabled=false) enforces the STIG
+#   (=0). When true, IPv6 forwarding is enabled (=1) for dual-stack RKE2 as a
+#   documented exemption (mirrors the IPv4 forwarding exemption). Written to
+#   /etc/sysctl.conf so it wins over the STIG base. No RHEL 9 equivalent control.
+# Severity: CAT II
+###########################################################
+- name: RHEL-10-800250 | Set IPv6 forwarding (0=STIG default, 1=RKE2 dual-stack exemption)
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "{{ '1' if rhel_rke2_stig_ipv6_enabled | bool else '0' }}"
+    state: present
+    sysctl_file: /etc/sysctl.conf
+    reload: false
+  loop:
+    - net.ipv6.conf.all.forwarding
+    - net.ipv6.conf.default.forwarding
+  notify: Reload sysctl
+  when: ansible_distribution_major_version is version('10', '>=')
+  tags:
+    - rke2
+    - sysctl
+    - RHEL-10-800250
+    - CAT II
