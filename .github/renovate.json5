@@ -52,4 +52,20 @@
       datasourceTemplate: "docker",
     },
   ],
+
+  // Digest-only maintenance for the Rocky base image: keep the `9-ubi-init`
+  // tag pinned to the RHEL 9 line (the `rhel9-stig` Molecule platform tests
+  // Rocky 9 by design) and refresh only its digest. Disabling major/minor/
+  // patch update types leaves the `digest` and `pin` update types enabled, so
+  // Renovate never proposes an OS bump (e.g. the unwanted 9 -> 10 tag bump in
+  // PR #38). A Rocky 10 test, if ever wanted, belongs in its own Molecule
+  // platform rather than mutating this one.
+  packageRules: [
+    {
+      matchDatasources: ["docker"],
+      matchPackageNames: ["quay.io/rockylinux/rockylinux"],
+      matchUpdateTypes: ["major", "minor", "patch"],
+      enabled: false,
+    },
+  ],
 }
