@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/security/advisories/new
+    about: Report vulnerabilities privately through GitHub. Do not open a public issue.
+  - name: Contributing guide
+    url: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/blob/main/CONTRIBUTING.md
+    about: Read the contribution and development-environment guidance first.
