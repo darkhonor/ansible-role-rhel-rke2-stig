@@ -19,6 +19,11 @@ on:
         required: true
         type: string
 
+# Least-privilege: the release job only needs to read the repo; the Galaxy
+# import authenticates with a secret, not the workflow token.
+permissions:
+  contents: read
+
 jobs:
   ###########################################################
   # Publish to Ansible Galaxy
