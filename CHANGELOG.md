@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the rule kernel-unloadable.
 - Tolerate missing RKE2 audit watch paths when pre-staging on a golden image.
 
+### Security
+
+- Set explicit least-privilege `permissions` on all CI and release workflow
+  jobs, resolving the CodeQL `actions/missing-workflow-permissions` findings.
+- Update `cryptography` to 48.0.1, remediating GHSA-537c-gmf6-5ccf (vulnerable
+  OpenSSL bundled in the cryptography wheels). (#43)
+
 ### Dependencies
 
 - Bump ansible-core from 2.21.0 to 2.21.1
@@ -35,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump actions/setup-python from 6.2.0 to 6.3.0 (#28)
 - Bump github/codeql-action from 4.36.1 to 4.36.2
 - Bump github/codeql-action/upload-sarif from 4.36.2 to 4.37.0 (#32)
+- Bump cryptography from 48.0.0 to 48.0.1 (#43)
 
 ## [0.3.2] - 2026-06-04
 
