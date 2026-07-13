@@ -56,6 +56,19 @@ jobs:
       - name: Run ansible-lint
         run: ansible-lint
 
+      - name: Run actionlint
+        # SHA-pinned so Dependabot tracks and updates it like the other actions.
+        # reporter: local + filter_mode: nofilter scans the whole tree with no
+        # diff and no extra token permissions (the job keeps its inherited
+        # contents: read); without nofilter, the local reporter needs a diff and
+        # fails with "diff command is empty". fail_level: any fails on any
+        # finding, including the shellcheck SC* info/style codes.
+        uses: reviewdog/action-actionlint@6fb7acc99f4a1008869fa8a0f09cfca740837d9d # v1.72.0
+        with:
+          reporter: local
+          filter_mode: nofilter
+          fail_level: any
+
   ###########################################################
   # Syntax Check Stage
   ###########################################################
