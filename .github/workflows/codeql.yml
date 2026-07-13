@@ -1,0 +1,68 @@
+---
+###############################################################################
+# Filename: .github/workflows/codeql.yml
+# Role: ansible-role-rhel-rke2-stig
+# Summary: CodeQL code scanning for GitHub Actions workflows (advanced setup)
+# Last Updated: 13 Jul 2026
+# Classification: UNCLASSIFIED
+###############################################################################
+# Advanced setup (committed workflow) rather than GitHub's managed default
+# setup: default setup is governed at the organization level for this repo and
+# cannot be enabled per-repository. This workflow runs CodeQL as a normal
+# Actions job and uploads results to the same Code scanning surface already
+# used for Trivy SARIF. The only CodeQL-analyzable language in this repo is
+# `actions` (the role itself is Ansible YAML + Jinja, which CodeQL does not
+# support); it flags workflow risks such as script injection, insecure action
+# usage, and over-broad token permissions.
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/**'
+  schedule:
+    # Weekly scan to pick up newly published CodeQL queries
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default; the analyze job grants exactly what it needs.
+permissions: {}
+
+jobs:
+  analyze:
+    name: CodeQL Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read           # read the workflow definitions under analysis
+      contents: read           # checkout the repository
+      security-events: write   # upload results to code scanning
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - actions
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4
+        with:
+          category: "/language:${{ matrix.language }}"
