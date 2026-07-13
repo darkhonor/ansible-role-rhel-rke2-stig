@@ -3,7 +3,7 @@
 # Filename: .github/dependabot.yml
 # Role: ansible-role-rhel-rke2-stig
 # Summary: Dependabot configuration for automated dependency updates
-# Last Updated: 23 Jan 2026
+# Last Updated: 13 Jul 2026
 # Classification: UNCLASSIFIED
 ###############################################################################
 version: 2
@@ -19,6 +19,15 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    # Supply-chain merge-cooldown: hold a bump PR until the release has aged
+    # past the detection window, so a compromised or yanked release is caught
+    # before adoption. Selection-time control, complementary to the SHA pins
+    # on the actions themselves. The Dependabot cooldown support table gives
+    # github-actions default-days ONLY (no semver tiering), so every action
+    # bump gets the single 5-day window. Aligned with the sibling repos
+    # (Knowledge Lake, Microkosmos).
+    cooldown:
+      default-days: 5
 
   # Python dependencies (pip) — managed as a pip-compile lock:
   # requirements.in is the source; requirements.txt is the hash-pinned,
@@ -38,3 +47,13 @@ updates:
     labels:
       - "dependencies"
       - "python"
+    # Supply-chain merge-cooldown: patch/minor get the standard 5-day detection
+    # window; majors get 10 (higher blast radius). Selection-time control,
+    # complementary to the --require-hashes lock. pip supports full semver
+    # tiering per the Dependabot cooldown support table. Aligned with the
+    # sibling repos (Knowledge Lake, Microkosmos).
+    cooldown:
+      default-days: 5
+      semver-patch-days: 5
+      semver-minor-days: 5
+      semver-major-days: 10
