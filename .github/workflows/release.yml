@@ -51,7 +51,7 @@ jobs:
         run: |
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
           VERSION="${TAG#v}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Releasing version: ${VERSION}"
 
       - name: Validate role metadata
@@ -64,15 +64,17 @@ jobs:
           ansible-galaxy role import \
             --api-key "${{ secrets.GALAXY_API_KEY }}" \
             --role-name rhel_rke2_stig \
-            ${{ github.repository_owner }} \
-            ${{ github.event.repository.name }}
+            "${{ github.repository_owner }}" \
+            "${{ github.event.repository.name }}"
         env:
           ANSIBLE_GALAXY_SERVER: https://galaxy.ansible.com
 
       - name: Create release summary
         run: |
-          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Role:** rhel_rke2_stig" >> $GITHUB_STEP_SUMMARY
-          echo "- **Galaxy:** https://galaxy.ansible.com/${{ github.repository_owner }}/rhel_rke2_stig" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Release Summary"
+            echo ""
+            echo "- **Version:** ${{ steps.version.outputs.version }}"
+            echo "- **Role:** rhel_rke2_stig"
+            echo "- **Galaxy:** https://galaxy.ansible.com/${{ github.repository_owner }}/rhel_rke2_stig"
+          } >> "$GITHUB_STEP_SUMMARY"
