@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose new STIG coverage or an enhancement
+labels: ["enhancement"]
+body:
+  - type: checkboxes
+    attributes:
+      label: Preconditions
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What gap or need does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the role do?
+    validations:
+      required: true
+  - type: input
+    id: stig-reference
+    attributes:
+      label: STIG / SRG reference
+      description: Control or rule ID(s) this relates to, if applicable
+      placeholder: RHEL-09-XXXXXX / Container Platform SRG
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+    validations:
+      required: false

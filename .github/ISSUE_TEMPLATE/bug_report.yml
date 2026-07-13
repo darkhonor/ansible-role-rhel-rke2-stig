@@ -1,0 +1,89 @@
+name: Bug report
+description: Report a defect in the role's behavior or STIG remediation
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please do **not** report
+        security vulnerabilities here — use private reporting per SECURITY.md.
+  - type: checkboxes
+    attributes:
+      label: Preconditions
+      options:
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+        - label: This is not a security vulnerability (those go through private reporting)
+          required: true
+  - type: input
+    id: role-version
+    attributes:
+      label: Role version
+      description: Release tag or git commit hash
+      placeholder: v0.3.2 (or commit sha)
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Target platform
+      options:
+        - RHEL 9
+        - RHEL 10
+        - Other (describe below)
+    validations:
+      required: true
+  - type: input
+    id: ansible-version
+    attributes:
+      label: ansible-core version
+      placeholder: "2.21.1"
+    validations:
+      required: true
+  - type: input
+    id: rke2-version
+    attributes:
+      label: RKE2 version
+      description: If relevant to the issue
+      placeholder: "v1.31.x"
+    validations:
+      required: false
+  - type: input
+    id: stig-control
+    attributes:
+      label: Affected STIG control / rule ID(s)
+      description: If known
+      placeholder: RHEL-09-215105 / V-258241
+    validations:
+      required: false
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: How can a maintainer reproduce this?
+      placeholder: |
+        1. Run the role against ...
+        2. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and logs
+      description: Include relevant Ansible output. Redact any sensitive values.
+      render: shell
+    validations:
+      required: false
