@@ -27,8 +27,11 @@ platforms:
     pre_build_image: true
     privileged: true
     command: /usr/sbin/init
-    # cgroups v2 compatibility for GitHub Actions runners
-    cgroupns_mode: host
+    # NOTE: do not add a cgroupns/cgroupns_mode key here. It is not a supported
+    # molecule podman-driver option and is never forwarded to podman, so it is
+    # silently ignored (and rejected outright by the driver schema added in
+    # molecule-plugins 26.7.15). systemd-as-PID-1 works on the GitHub Actions
+    # runners via privileged + the /run tmpfs + SYS_ADMIN below.
     tmpfs:
       /run: rw,noexec,nosuid,size=65536k
       /tmp: rw,noexec,nosuid
