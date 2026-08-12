@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sub-actions are always proposed as one PR at a single SHA instead of drifting
   apart into a broken analysis.
 
+### Removed
+
+- Dead `cgroupns_mode: host` key from the Molecule platform config. It is not a
+  supported molecule podman-driver option and was never forwarded to podman in
+  any shipped version, so it was a silent no-op behind a comment claiming
+  cgroups v2 compatibility for GitHub Actions runners — an assurance the key
+  never actually provided. systemd-as-PID-1 works via `privileged`, the `/run`
+  tmpfs mount, and `SYS_ADMIN`.
+
 ### Fixed
 
 - Re-pinned the Rocky Linux 9 UBI-init image to a live digest after the pinned
