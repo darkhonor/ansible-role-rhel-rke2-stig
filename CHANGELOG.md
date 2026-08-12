@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (digest-only; the pins Dependabot cannot track). (#36, #40)
 - Supply-chain cooldown window for Dependabot updates, standardized with the
   sibling repositories. (#35)
+- Dependabot `codeql-action` version-lockstep group, so the `github/codeql-action`
+  sub-actions are always proposed as one PR at a single SHA instead of drifting
+  apart into a broken analysis.
 
 ### Fixed
 
@@ -24,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dropped a trailing slash on the RHEL 10 `/etc/sudoers.d` audit path that made
   the rule kernel-unloadable.
 - Tolerate missing RKE2 audit watch paths when pre-staging on a golden image.
+- Restore the CodeQL workflow by moving `github/codeql-action` `init`,
+  `analyze`, and `upload-sarif` to a single release (v4.37.6) in one commit.
+  The sub-actions share one monorepo commit and the action fails closed when
+  they disagree, so the per-sub-action Dependabot bumps (#50, #51, #53) each
+  broke the analysis on their own and could not be fixed by merging them
+  individually — they targeted different releases.
 
 ### Security
 
@@ -43,6 +52,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump github/codeql-action from 4.36.1 to 4.36.2
 - Bump github/codeql-action/upload-sarif from 4.36.2 to 4.37.0 (#32)
 - Bump cryptography from 48.0.0 to 48.0.1 (#43)
+- Bump ansible-core from 2.21.1 to 2.21.2 (#47)
+- Bump pre-commit from 4.6.0 to 4.6.1 (#48)
+- Bump actions/checkout from 7.0.0 to 7.0.1 (#52)
+- Bump actions/setup-python from 6.3.0 to 7.0.0 (#54)
+- Bump cryptography from 48.0.1 to 50.0.0 (#55)
+- Bump github/codeql-action from 4.37.0 to 4.37.6 (`init`, `analyze`,
+  `upload-sarif` in lockstep)
 
 ## [0.3.2] - 2026-06-04
 
