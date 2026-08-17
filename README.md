@@ -622,7 +622,7 @@ net.ipv4.conf.default.forwarding = 1
 
 #### Critical: sysctl Load Order
 
-⚠️ **IMPORTANT:** The `sysctl --system` command processes configuration in this order:
+**IMPORTANT:** The `sysctl --system` command processes configuration in this order:
 
 1. `/run/sysctl.d/*.conf`
 2. `/etc/sysctl.d/*.conf` (alphabetically)
@@ -1374,7 +1374,7 @@ findings from outdated baselines and understand rule evolution. See
 
 **26 rules** modified (0 added, 0 removed). 8 FIPS/crypto rules were raised from
 CAT II to CAT I; 3 of those are implemented by this role (above). Check/fix text
-is unchanged, so remediation logic is unaffected — only the risk rating and the
+is unchanged, so remediation logic is unaffected. Only the risk rating and the
 role's severity metadata were updated.
 
 ### RKE2 STIG: V2R5 → V2R6 (April 2026)

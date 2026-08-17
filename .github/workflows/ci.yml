@@ -220,10 +220,35 @@ jobs:
     steps:
       - name: Check job results
         run: |
-          if [[ "${{ needs.lint.result }}" == "failure" ]] || \
-             [[ "${{ needs.syntax.result }}" == "failure" ]] || \
-             [[ "${{ needs.molecule.result }}" == "failure" ]]; then
-            echo "One or more jobs failed"
+          # `security` is listed in `needs` above and must also be checked
+          # here. CI Status is the single required status context for branch
+          # protection, so omitting security means a Trivy CRITICAL or a
+          # CodeQL finding fails the Security Scan job while this gate still
+          # reports success and the pull request stays mergeable.
+          #
+          # Each dependency is tested with `!= success`, not `== failure`.
+          # needs.<job>.result has four values: success, failure, cancelled,
+          # and skipped. Testing only for `failure` treats `cancelled` and
+          # `skipped` as acceptable. Because this job carries `if: always()`
+          # it still runs when the workflow is cancelled, so a cancelled
+          # Security Scan would leave result == "cancelled", pass this gate,
+          # and mark the PR mergeable with no completed Trivy or SARIF
+          # evidence. The concurrency block above sets cancel-in-progress,
+          # which makes that state reachable in normal operation.
+          #
+          # No job in this workflow carries an `if:` condition, so none is
+          # designed to be skipped; `skipped` only occurs when an upstream
+          # `needs` job failed. Requiring `success` is therefore strictly
+          # correct here and rejects nothing legitimate.
+          if [[ "${{ needs.lint.result }}" != "success" ]] || \
+             [[ "${{ needs.syntax.result }}" != "success" ]] || \
+             [[ "${{ needs.molecule.result }}" != "success" ]] || \
+             [[ "${{ needs.security.result }}" != "success" ]]; then
+            echo "One or more required jobs did not succeed"
+            echo "  lint:     ${{ needs.lint.result }}"
+            echo "  syntax:   ${{ needs.syntax.result }}"
+            echo "  molecule: ${{ needs.molecule.result }}"
+            echo "  security: ${{ needs.security.result }}"
             exit 1
           fi
           echo "All required jobs passed"
