@@ -38,7 +38,7 @@ python3 --version   # Should show Python 3.9.x
 python --version    # Should show Python 3.12.x
 ```
 
-> **⚠️ WARNING**: Do NOT change `python3` to point to Python 3.12. This will break
+> **WARNING**: Do NOT change `python3` to point to Python 3.12. This will break
 > `subscription-manager`, `dnf`, and other RHEL system tools. Recovery requires
 > manually creating a temporary repo with entitlement certificates to reinstall
 > `subscription-manager`. Don't ask how we know this.

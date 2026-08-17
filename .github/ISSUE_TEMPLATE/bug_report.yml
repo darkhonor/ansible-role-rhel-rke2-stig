@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to file a bug. Please do **not** report
-        security vulnerabilities here — use private reporting per SECURITY.md.
+        security vulnerabilities here. Use private reporting per SECURITY.md.
   - type: checkboxes
     attributes:
       label: Preconditions

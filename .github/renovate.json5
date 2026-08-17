@@ -1,7 +1,7 @@
 // ###########################################################################
 // Filename: .github/renovate.json5
 // Role: ansible-role-rhel-rke2-stig
-// Summary: Renovate configuration — container digest-pin maintenance ONLY
+// Summary: Renovate configuration, container digest-pin maintenance ONLY
 // Last Updated: 13 Jul 2026
 // Classification: UNCLASSIFIED
 // ###########################################################################
@@ -11,7 +11,7 @@
 // Dependabot owns pip and github-actions in this repo (see dependabot.yml).
 // Renovate is scoped to the ONE thing Dependabot structurally cannot track:
 // the Rocky Linux base-image digest pins that live in a bare `podman pull`
-// shell line and a Molecule platform image — neither is a Dockerfile, so
+// shell line and a Molecule platform image. Neither is a Dockerfile, so
 // Dependabot's docker ecosystem never sees them. When Rocky re-pushes the
 // `9-ubi-init` tag and garbage-collects the old digest, the pinned digest
 // goes stale and CI breaks (the exact failure this config prevents).
@@ -35,7 +35,7 @@
   // vendor artifact (Rocky UBI-init), digest-pinned and CVE-scanned by Trivy
   // at PR time, so prompt uptake of a re-pushed/patched digest is preferred
   // over a supply-chain detection window. (Contrast: pip/github-actions DO
-  // get a Dependabot cooldown — broader, less-curated dependency surface.)
+  // get a Dependabot cooldown, a broader and less-curated dependency surface.)
   customManagers: [
     {
       customType: "regex",

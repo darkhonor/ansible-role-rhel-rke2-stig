@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dead `cgroupns_mode: host` key from the Molecule platform config. It is not a
   supported molecule podman-driver option and was never forwarded to podman in
   any shipped version, so it was a silent no-op behind a comment claiming
-  cgroups v2 compatibility for GitHub Actions runners — an assurance the key
+  cgroups v2 compatibility for GitHub Actions runners, an assurance the key
   never actually provided. systemd-as-PID-1 works via `privileged`, the `/run`
   tmpfs mount, and `SYS_ADMIN`.
 
@@ -41,10 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The sub-actions share one monorepo commit and the action fails closed when
   they disagree, so the per-sub-action Dependabot bumps (#50, #51, #53) each
   broke the analysis on their own and could not be fixed by merging them
-  individually — they targeted different releases.
+  individually, because they targeted different releases.
 
 ### Security
 
+- Gate the `CI Status` check on the `security` job. `security` was listed in
+  the check's `needs` but omitted from its failure condition, so a Trivy
+  CRITICAL or a CodeQL finding failed the Security Scan job while the single
+  required status context for branch protection still reported success and the
+  pull request stayed mergeable.
 - Set explicit least-privilege `permissions` on all CI and release workflow
   jobs, resolving the CodeQL `actions/missing-workflow-permissions` findings.
 - Update `cryptography` to 48.0.1, remediating GHSA-537c-gmf6-5ccf (vulnerable

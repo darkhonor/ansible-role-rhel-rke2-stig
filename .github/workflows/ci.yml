@@ -220,10 +220,20 @@ jobs:
     steps:
       - name: Check job results
         run: |
+          # `security` is listed in `needs` above and must also be checked
+          # here. CI Status is the single required status context for branch
+          # protection, so omitting security means a Trivy CRITICAL or a
+          # CodeQL finding fails the Security Scan job while this gate still
+          # reports success and the pull request stays mergeable.
           if [[ "${{ needs.lint.result }}" == "failure" ]] || \
              [[ "${{ needs.syntax.result }}" == "failure" ]] || \
-             [[ "${{ needs.molecule.result }}" == "failure" ]]; then
+             [[ "${{ needs.molecule.result }}" == "failure" ]] || \
+             [[ "${{ needs.security.result }}" == "failure" ]]; then
             echo "One or more jobs failed"
+            echo "  lint:     ${{ needs.lint.result }}"
+            echo "  syntax:   ${{ needs.syntax.result }}"
+            echo "  molecule: ${{ needs.molecule.result }}"
+            echo "  security: ${{ needs.security.result }}"
             exit 1
           fi
           echo "All required jobs passed"

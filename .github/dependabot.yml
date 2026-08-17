@@ -33,7 +33,7 @@ updates:
     # resolve to the same repository commit, and the action refuses to run when
     # they disagree ("Loaded a configuration file for version 'X', but running
     # version 'Y'"). Ungrouped, Dependabot opens one PR per sub-action and each
-    # one alone breaks CodeQL — merging them individually cannot fix it, because
+    # one alone breaks CodeQL. Merging them individually cannot fix it, because
     # the PRs target different releases. Grouping forces a single PR that moves
     # every sub-action to one SHA, preserving the invariant by construction.
     groups:
@@ -41,12 +41,12 @@ updates:
         patterns:
           - "github/codeql-action*"
 
-  # Python dependencies (pip) — managed as a pip-compile lock:
+  # Python dependencies (pip), managed as a pip-compile lock:
   # requirements.in is the source; requirements.txt is the hash-pinned,
   # --require-hashes lock generated from it. The option below lets the
   # Dependabot updater run `pip-compile` to regenerate requirements.txt so
   # the source and lock stay in sync. NOTE: this permission applies ONLY to
-  # GitHub's isolated Dependabot updater computing dependency PRs — it has no
+  # GitHub's isolated Dependabot updater computing dependency PRs. It has no
   # effect on CI execution, the runtime role, or the deployed system.
   - package-ecosystem: "pip"
     directory: "/"
