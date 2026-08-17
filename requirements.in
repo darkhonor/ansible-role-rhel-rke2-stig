@@ -19,7 +19,7 @@ yamllint==1.38.0
 ansible-lint==26.6.0
 
 # Pre-commit hooks
-pre-commit==4.6.1
+pre-commit==4.6.2
 
 # Testing
 molecule==26.6.0
