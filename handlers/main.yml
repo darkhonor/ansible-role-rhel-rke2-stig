@@ -14,6 +14,21 @@
   failed_when: false
   listen: Reload auditd rules
 
+# Read immutability BEFORE the reload. `augenrules --load` exits 0 without applying
+# anything when the audit system is already immutable (`-e 2`); see check_immutable()
+# in /usr/sbin/augenrules, which prints "Audit system is in immutable mode - exiting
+# with no changes" and returns 0. Sampling this after the reload could not distinguish
+# "we just set -e 2 successfully" from "we were locked and did nothing".
+- name: Check whether the audit system is already immutable
+  ansible.builtin.shell:
+    cmd: set -o pipefail && auditctl -s | awk '$1 == "enabled" { print $2 }'
+    executable: /bin/bash
+  register: audit_immutable_pre
+  changed_when: false
+  failed_when: false
+  when: auditd_active.rc == 0
+  listen: Reload auditd rules
+
 - name: Reload auditd rules
   ansible.builtin.command:
     cmd: augenrules --load
@@ -30,6 +45,96 @@
     - augenrules_load.rc != 0
     - "'No such file or directory' not in augenrules_load.stderr"
   when: auditd_active.rc == 0
+  listen: Reload auditd rules
+
+# This handler only runs when something notified it, i.e. a rules file CHANGED this
+# run. If the audit system was already immutable, that pending change was silently
+# discarded by augenrules and will not exist in the kernel until a reboot re-reads
+# /etc/audit/audit.rules. Reporting success here is what let a broken ruleset ship
+# while `harden.sh` reported failed=0.
+- name: Fail if audit rule changes could not be applied (immutable mode)
+  ansible.builtin.fail:
+    msg: >-
+      Audit rules changed this run, but the audit system is in immutable mode
+      (-e 2), so `augenrules --load` exited 0 WITHOUT APPLYING THEM. The kernel is
+      still running the previously loaded ruleset. REBOOT to apply the pending
+      rules, then re-run to verify. Set
+      rhel_rke2_stig_audit_immutable_pending_is_fatal=false to downgrade this to a
+      warning if you are staging changes for a later maintenance reboot.
+  when:
+    - auditd_active.rc == 0
+    - audit_immutable_pre.stdout | default('') | trim == '2'
+    - rhel_rke2_stig_audit_immutable_pending_is_fatal | bool
+  listen: Reload auditd rules
+
+# The opt-out downgrades severity, never visibility. A silent pass here is exactly
+# the behaviour this issue exists to remove.
+- name: Warn that audit rule changes are pending a reboot (immutable mode, non-fatal)
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: audit rules changed but the audit system is immutable (-e 2), so
+      they were NOT applied. The kernel is still running the previously loaded
+      ruleset. This node REQUIRES A REBOOT before its audit baseline matches what
+      this role just wrote. Downgraded to a warning by
+      rhel_rke2_stig_audit_immutable_pending_is_fatal=false.
+  when:
+    - auditd_active.rc == 0
+    - audit_immutable_pre.stdout | default('') | trim == '2'
+    - not (rhel_rke2_stig_audit_immutable_pending_is_fatal | bool)
+  listen: Reload auditd rules
+
+# Catches the whole "rules silently did not load" class regardless of cause: a rule
+# the kernel rejects (EPERM on a symlinked -F path=, "Rule exists" on a duplicate)
+# makes augenrules ABORT, dropping every later rule AND the trailing `-e 2`. The
+# ruleset on disk still looks complete, so only runtime state reveals it.
+# `-e 2` is the last line augenrules emits, so "did immutability actually take
+# effect" is a single high-signal assertion that the load ran to completion - far
+# more robust than counting rules, which legitimately varies at build time when
+# missing-path watches do not load.
+- name: Check whether the assembled ruleset requests immutability
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      if grep -qE '^[[:space:]]*-e[[:space:]]+2[[:space:]]*$' /etc/audit/audit.rules; then
+        echo yes
+      else
+        echo no
+      fi
+    executable: /bin/bash
+  register: audit_rules_request_immutable
+  changed_when: false
+  failed_when: false
+  when:
+    - auditd_active.rc == 0
+    - audit_immutable_pre.stdout | default('') | trim != '2'
+  listen: Reload auditd rules
+
+- name: Verify the audit ruleset loaded to completion
+  ansible.builtin.shell:
+    cmd: set -o pipefail && auditctl -s | awk '$1 == "enabled" { print $2 }'
+    executable: /bin/bash
+  register: audit_immutable_post
+  changed_when: false
+  failed_when: false
+  when:
+    - auditd_active.rc == 0
+    - audit_immutable_pre.stdout | default('') | trim != '2'
+  listen: Reload auditd rules
+
+- name: Fail if the audit ruleset requests immutability but did not reach it
+  ansible.builtin.fail:
+    msg: >-
+      /etc/audit/audit.rules ends with `-e 2` but the audit system reports
+      enabled={{ audit_immutable_post.stdout | default('') | trim }}. augenrules
+      ABORTED before the final rule, so an unknown number of rules are NOT loaded
+      and the audit configuration is still mutable. Compare `auditctl -l` against
+      /etc/audit/audit.rules and check the augenrules output for "Error sending add
+      rule data request" to find the offending rule.
+  when:
+    - auditd_active.rc == 0
+    - audit_immutable_pre.stdout | default('') | trim != '2'
+    - audit_rules_request_immutable.stdout | default('no') | trim == 'yes'
+    - audit_immutable_post.stdout | default('') | trim != '2'
   listen: Reload auditd rules
 
 ###############################################################################

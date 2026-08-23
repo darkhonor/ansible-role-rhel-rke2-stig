@@ -174,12 +174,28 @@
         fail_msg: "STIG audit rules file missing or empty"
         success_msg: "STIG audit rules file exists and has content"
 
-    - name: RHEL-09-654xxx | Verify audit rules contain expected entries
+    # Derived from the dataset rather than hardcoded. The template emits exactly one
+    # "STIG-ID:" comment per entry in rhel_rke2_stig_audit_rules, so this asserts the
+    # render was COMPLETE - it catches a truncated or partially-rendered file, which a
+    # ">= <magic number>" floor cannot. A hardcoded floor also fails on any legitimate
+    # change to the dataset: it broke when four rules that duplicate the SSG base
+    # profile were removed (#66), even though that removal was correct.
+    - name: RHEL-09-654xxx | Load the audit rule dataset for this OS major
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../../vars/rhel{{ ansible_distribution_major_version }}.yml"
+
+    - name: RHEL-09-654xxx | Verify every dataset rule rendered into the file
       ansible.builtin.command:
         cmd: grep -c "STIG-ID" /etc/audit/rules.d/20-stig.rules
       register: audit_rules_count
       changed_when: false
-      failed_when: audit_rules_count.stdout | int < 50
+      failed_when: audit_rules_count.stdout | int != rhel_rke2_stig_audit_rules | length
+
+    - name: RHEL-09-654xxx | Report rendered audit rule count
+      ansible.builtin.debug:
+        msg: >-
+          Rendered {{ audit_rules_count.stdout }} of
+          {{ rhel_rke2_stig_audit_rules | length }} dataset audit rule entries.
 
     - name: RHEL-09-654xxx | Verify audit rules file permissions
       ansible.builtin.assert:

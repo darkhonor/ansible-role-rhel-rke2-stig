@@ -33,7 +33,29 @@
 
 ## Audit crictl (container runtime) execution
 -a always,exit -F path=/usr/bin/crictl -F perm=x -F auid>=1000 -F auid!=unset -k container_runtime
--a always,exit -F path=/var/lib/rancher/rke2/bin/crictl -F perm=x -F auid>=1000 -F auid!=unset -k container_runtime
+## NOTE: do NOT add a -F path= rule for /var/lib/rancher/rke2/bin/crictl.
+## /var/lib/rancher/rke2/bin is a SYMLINK into RKE2's versioned data directory
+## (/var/lib/rancher/rke2/data/<version>/bin), and the audit kernel does not resolve
+## symlinks for -F path= watches - it rejects the rule with EPERM ("Error sending add
+## rule data request (Permission denied)"). augenrules then ABORTS the entire load at
+## that line, dropping every later rule and the trailing -e 2, leaving the audit
+## configuration mutable. The resolved path cannot be substituted either: it embeds
+## the RKE2 version and changes on every upgrade.
+##
+## No replacement watch is added, deliberately. A directory watch such as
+##   -w /var/lib/rancher/rke2/data/ -p x -k container_runtime
+## looks like the obvious substitute and is NOT safe here: that tree holds containerd,
+## runc, kubelet and crictl, which the container runtime executes continuously, and a
+## -p x directory watch has no auid filter so it records root and system execs too.
+## The SSG base ruleset these nodes run sets `-f 2` (panic on audit failure, visible as
+## `failure 2` in `auditctl -s`), so flooding the audit backlog is a kernel panic, on
+## every node, not merely lost records.
+##
+## Coverage is not lost: /var/lib/rancher/rke2/bin is 0750 root:root, so a subject with
+## auid>=1000 cannot traverse it. Unprivileged execution of that binary is already
+## impossible rather than merely unaudited, which is what the removed rule was trying
+## to detect. Privileged execution is covered by the /usr/bin/crictl rule above and by
+## the etcd/PKI/config watches below.
 
 ## Audit etcd data directory (critical for cluster state)
 -w /var/lib/rancher/rke2/server/db/ -p wa -k etcd_data

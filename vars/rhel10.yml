@@ -34,17 +34,29 @@ rhel_rke2_stig_audit_rules:
       -a always,exit -F arch=b32 -S chmod,fchmod,fchmodat,fchmodat2 -F auid>=1000 -F auid!=unset -k perm_mod
       -a always,exit -F arch=b64 -S chmod,fchmod,fchmodat,fchmodat2 -F auid>=1000 -F auid!=unset -k perm_mod
 
-  # STIG ID: RHEL-10-500790    Group ID: V-281164
-  # Severity: CAT II
-  - stig_id: "RHEL-10-500790"
-    group_id: "V-281164"
-    rule_title: >
-      RHEL 10 must generate audit records for all uses of the "chown",
-      "fchown", "fchownat", and "lchown" syscalls.
-    severity: "CAT II"
-    audit_rule: |
-      -a always,exit -F arch=b32 -S chown,fchown,fchownat,lchown -F auid>=1000 -F auid!=unset -k perm_mod
-      -a always,exit -F arch=b64 -S chown,fchown,fchownat,lchown -F auid>=1000 -F auid!=unset -k perm_mod
+  ###########################################################
+  # DELEGATED TO THE BASE STIG PROFILE - do NOT re-add here.
+  #
+  # STIG ID: RHEL-10-500790 (V-281164) - chown/fchown/fchownat/lchown
+  #
+  # The SSG/SCAP base remediation this role runs on top of (see README
+  # "Overview": the role assumes the base STIG profile was applied at install
+  # time) already emits this rule in /etc/audit/rules.d/perm_mod.rules as:
+  #   -a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown \
+  #      -F auid>=1000 -F auid!=unset -F key=perm_mod
+  #
+  # That is the SAME rule to the kernel (-S a -S b == -S a,b; -F key=X == -k X)
+  # but textually different, and `augenrules` does NOT deduplicate - it emits
+  # every rule verbatim (see the awk block in /usr/sbin/augenrules). The kernel
+  # rejects the second copy with "Rule exists" and augenrules ABORTS THE ENTIRE
+  # LOAD at that line, dropping every rule after it AND the trailing `-e 2`,
+  # leaving the audit config mutable. Re-encoding to match SSG does not help,
+  # precisely because there is no dedupe.
+  #
+  # Emitting a rule the base profile already provides is also outside this
+  # role's stated scope ("fills in gaps", "does NOT implement the full RHEL
+  # STIG"). Coverage is unchanged: the control is satisfied by perm_mod.rules.
+  ###########################################################
 
   # STIG ID: RHEL-10-500310    Group ID: V-281117
   # Severity: CAT II
@@ -55,9 +67,11 @@ rhel_rke2_stig_audit_rules:
       of the "setxattr", "fsetxattr", "lsetxattr", "removexattr",
       "fremovexattr", and "lremovexattr" system calls.
     severity: "CAT II"
+    # The auid>=1000 b32/b64 pair is DELEGATED to the base profile for the same
+    # reason as RHEL-10-500790 above - perm_mod.rules already emits it and the
+    # duplicate aborts the whole rule load. The auid=0 pair below is NOT emitted
+    # by the base profile, so it stays here; it is the gap this role fills.
     audit_rule: |
-      -a always,exit -F arch=b32 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid>=1000 -F auid!=unset -k perm_mod
-      -a always,exit -F arch=b64 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid>=1000 -F auid!=unset -k perm_mod
       -a always,exit -F arch=b32 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid=0 -k perm_mod
       -a always,exit -F arch=b64 -S setxattr,fsetxattr,lsetxattr,removexattr,fremovexattr,lremovexattr -F auid=0 -k perm_mod
 

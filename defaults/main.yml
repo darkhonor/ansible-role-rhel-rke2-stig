@@ -245,3 +245,47 @@ rhel_rke2_stig_rp_filter_all: "2"
 # mirroring the IPv4 forwarding exemption (RHEL-09-253075 / RHEL-10-800210).
 ###############################################################################
 rhel_rke2_stig_ipv6_enabled: false
+
+###############################################################################
+# Audit rule load verification.
+#
+# `augenrules --load` exits 0 without applying anything when the audit system is
+# already immutable (`-e 2`) - see check_immutable() in /usr/sbin/augenrules. The
+# reload handler only fires when a rules file actually CHANGED, so hitting that
+# state means a pending rule change was silently discarded and will not reach the
+# kernel until a reboot re-reads /etc/audit/audit.rules.
+#
+# Default true (fail) because the alternative is a green run on a node whose audit
+# baseline is not what the role just wrote - the failure mode that let an aborted
+# ruleset ship while the play reported failed=0.
+#
+# Set false ONLY when deliberately staging audit changes for a later maintenance
+# reboot. It downgrades the condition to a warning; it does NOT make the rules
+# take effect, and the node still needs that reboot.
+###############################################################################
+rhel_rke2_stig_audit_immutable_pending_is_fatal: true
+
+###############################################################################
+# AIDE exclusions for Kubernetes container logs.
+#
+# Stock /etc/aide.conf watches /var/log recursively, kubelet creates
+# /var/log/pods/ and /var/log/containers/ after image bake, and the SSG
+# remediation aide_use_fips_hashes adds sha512 to the LOG group - which is meant
+# to be size-only. The result is content-hashed, append-only container logs and an
+# `aide --check` that can never return 0 on a running node.
+#
+# Default true: a file integrity check that is permanently red is worse than none,
+# because a real intrusion is indistinguishable from the expected noise.
+#
+# Scoped to Kubernetes paths only. /var/log/audit/audit.log has the same churn
+# from the same cause but is a base-OS concern on every RHEL host, not an RKE2
+# gap; excluding it would weaken a base control this role does not own.
+#
+# Changing these REQUIRES re-initializing the AIDE database afterwards - see the
+# warning the AIDE task emits.
+###############################################################################
+rhel_rke2_stig_aide_exclusions_enabled: true
+rhel_rke2_stig_aide_conf_path: /etc/aide.conf
+rhel_rke2_stig_aide_exclusions:
+  - /var/log/pods
+  - /var/log/containers

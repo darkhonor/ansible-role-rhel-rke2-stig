@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Audit rule load verification. `augenrules --load` returns 0 even when it applies
+  nothing, so a ruleset that the kernel rejected mid-load left the play reporting
+  success while most of the policy was never loaded. The reload handler now reads
+  immutability *before* reloading, fails when rule changes could not be applied
+  because the audit system is already immutable (`-e 2`, new opt-out
+  `rhel_rke2_stig_audit_immutable_pending_is_fatal`), and asserts that a ruleset
+  ending in `-e 2` actually reached `enabled 2` — a single high-signal check that
+  the load ran to completion. (#67)
+- AIDE exclusions for Kubernetes container logs (`/var/log/pods`,
+  `/var/log/containers`) via `rhel_rke2_stig_aide_exclusions`. Stock `aide.conf`
+  watches `/var/log` recursively, kubelet creates those paths after image bake, and
+  `aide_use_fips_hashes` puts `sha512` into the size-only `LOG` group — so
+  append-only container logs are content-hashed and `aide --check` can never return
+  0 on a running node. Emits an explicit warning that the AIDE database must be
+  re-initialized, which is a deploy-time action this role deliberately does not
+  perform. (#65)
 - RHEL 10 STIG (V1R1) support via version-gated dataset loading: RHEL 10 audit
   rules, kernel module blacklist, and RHEL 10-gated `all.rp_filter` / IPv6
   forwarding toggles.
@@ -31,6 +47,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Removed the audit rule targeting `/var/lib/rancher/rke2/bin/crictl`. That path
+  traverses a symlink into RKE2's versioned data directory, and the audit kernel
+  does not resolve symlinks for `-F path=` watches — it rejects the rule with
+  `EPERM`, and `augenrules` aborts the entire load at that line. On a live cluster
+  this left **8 of 205 rules loaded** with the audit configuration still mutable.
+  No replacement watch was added: a `-p x` watch on the data directory would record
+  every containerd/runc/kubelet exec, and the SSG base sets `-f 2` (panic on audit
+  failure), so flooding the backlog is a kernel panic rather than lost records. The
+  directory is `0750 root:root`, so `auid>=1000` execution was already impossible
+  rather than merely unaudited. (#64)
+- Removed four audit rules that duplicate the SSG/SCAP `perm_mod.rules` the base
+  STIG profile already applies (`chown` family and the `auid>=1000` `xattr` family,
+  b32 and b64). They are identical to the kernel but textually different, and
+  `augenrules` performs no deduplication whatsoever — it emits every rule verbatim
+  — so the kernel rejected the second copy with `Rule exists` and aborted the load,
+  stopping at **129 of 205 rules** with `-e 2` never reached. Re-encoding to match
+  SSG cannot help, precisely because there is no dedupe. The `auid=0` `xattr` pair
+  is not emitted by the base profile and is retained. (#66)
 - Re-pinned the Rocky Linux 9 UBI-init image to a live digest after the pinned
   digest was removed upstream, restoring CI across all branches. (#34)
 - Dropped a trailing slash on the RHEL 10 `/etc/sudoers.d` audit path that made
