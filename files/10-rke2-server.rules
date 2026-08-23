@@ -90,7 +90,24 @@
 -w /var/lib/rancher/rke2/agent/containerd/io.containerd.content.v1.content/ -p wa -k container_images
 
 ## Audit container runtime socket
--w /run/k3s/containerd/containerd.sock -p wa -k container_socket
+## REMOVED: -w /run/k3s/containerd/containerd.sock -p wa -k container_socket
+##
+## /run is tmpfs, so this socket does not exist until RKE2 starts - and audit-rules.service
+## runs at BOOT, before rke2-server/rke2-agent. The watch failed with "No such file or
+## directory" and augenrules ABORTED the whole load at that line, dropping every rule after
+## it AND the trailing -e 2. Net effect: a node hardened to 202/207 rules with `enabled 2`
+## came back from any reboot with ~20 rules and audit MUTABLE, silently, and stayed that way
+## until the role ran again. The role's `No such file or directory` tolerance - correct for
+## build-time pre-staging on a golden image - is what kept this quiet at runtime.
+##
+## Verified by reboot, not by inference: with this line removed the node comes back with the
+## FULL ruleset loaded and `auditctl -s` reporting `enabled 2`. Other watches on paths that
+## are absent at boot (e.g. the server-only /var/lib/rancher/rke2/server/* paths on an agent)
+## do NOT abort the load - this socket was the only one that did.
+##
+## Do not "restore" this watch without re-testing across a reboot. If socket auditing is
+## wanted, it needs a unit ordered After=rke2-server.service/rke2-agent.service that re-runs
+## augenrules once the runtime paths exist - not a boot-time watch. See issue #74.
 
 ## Audit iptables/firewall changes (critical for pod networking)
 -a always,exit -F path=/usr/sbin/iptables -F perm=x -F auid>=1000 -F auid!=unset -k network_modifications
