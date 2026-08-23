@@ -49,34 +49,84 @@ MARKER = "#DELEGATED-TO-BASE-PROFILE"
 
 
 def normalise(line):
-    """Return a canonical form of an audit rule, or None if not a rule."""
+    """Return a canonical form of an audit rule, or None if the line is not a rule.
+
+    Parses the rule into TOKENS rather than rewriting the string. An earlier version did
+    string surgery - converting `-F key=X` in place, stripping `-S`, then sorting by
+    splitting on " -F " - which left non-field tokens such as `-k` glued to whichever
+    field happened to precede them. Two equivalent rules then canonicalised differently
+    and the duplicate survived, which is the exact abort this helper exists to prevent:
+
+        base: -a always,exit -F auid!=unset -S fchownat -S chown -F arch=b64 \
+              -F key=perm_mod -S fchown -S lchown -F auid>=1000
+        role: -a always,exit -F arch=b64 -S chown,fchown,fchownat,lchown \
+              -F auid>=1000 -F auid!=unset -k perm_mod
+
+    Those are the same rule to the kernel. Tokenising makes them compare equal regardless
+    of how the flags are interleaved.
+
+    An unrecognised token is kept as an opaque field rather than dropped, so an
+    unfamiliar construct makes a rule LESS likely to match, never more. Failing to
+    delegate is a loud, recoverable duplicate error; delegating wrongly silently removes
+    audit coverage.
+    """
     s = line.strip()
     if not s or s.startswith("#"):
         return None
-    # Only -a/-w rules participate; -D/-b/-f/-e are control lines augenrules hoists.
-    if not (s.startswith("-a") or s.startswith("-w")):
+    toks = s.split()
+    # Only -a/-A syscall rules and -w watches participate. -D/-b/-f/-e are control lines
+    # that augenrules hoists out of the rule body entirely.
+    if not toks or toks[0] not in ("-a", "-A", "-w"):
         return None
 
-    s = re.sub(r"-F\s+key=(\S+)", r"-k \1", s)
+    action = watch = perms = None
+    syscalls, fields, keys = set(), set(), set()
 
-    syscalls = []
+    i = 0
+    while i < len(toks):
+        tok = toks[i]
+        val = toks[i + 1] if i + 1 < len(toks) else None
+        if tok in ("-a", "-A") and val is not None:
+            # -A prepends and -a appends; the resulting RULE is identical, and the kernel
+            # rejects the duplicate either way, so insertion order is not part of identity.
+            action = val
+            i += 2
+        elif tok == "-w" and val is not None:
+            watch = val
+            i += 2
+        elif tok == "-p" and val is not None:
+            perms = "".join(sorted(set(val)))
+            i += 2
+        elif tok == "-S" and val is not None:
+            syscalls.update(x for x in val.split(",") if x)
+            i += 2
+        elif tok in ("-F", "-C") and val is not None:
+            if val.startswith("key="):
+                keys.add(val[4:])
+            else:
+                fields.add(val)
+            i += 2
+        elif tok == "-k" and val is not None:
+            keys.add(val)
+            i += 2
+        else:
+            fields.add(tok)
+            i += 1
 
-    def _collect(m):
-        syscalls.extend(x for x in m.group(1).split(",") if x)
-        return " "
-
-    s = re.sub(r"-S\s+([A-Za-z0-9_,]+)", _collect, s)
-    s = re.sub(r"\s+", " ", s).strip()
-
-    # Sort -F fields so ordering is not significant.
-    if " -F " in s:
-        head, _, rest = s.partition(" -F ")
-        fields = sorted(f.strip() for f in rest.split(" -F "))
-        s = head + " -F " + " -F ".join(fields)
-
+    parts = []
+    if watch:
+        parts.append("w:" + watch)
+    if action:
+        parts.append("a:" + action)
+    if perms:
+        parts.append("p:" + perms)
     if syscalls:
-        s += " -S " + ",".join(sorted(set(syscalls)))
-    return s
+        parts.append("S:" + ",".join(sorted(syscalls)))
+    if fields:
+        parts.append("F:" + ",".join(sorted(fields)))
+    if keys:
+        parts.append("k:" + ",".join(sorted(keys)))
+    return " ".join(parts)
 
 
 def load_base(rules_dir, owned):
