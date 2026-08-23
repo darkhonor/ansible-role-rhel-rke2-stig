@@ -112,3 +112,10 @@ docs/
 # Python virtual environments (local dev / CI-parity reproduction)
 .venv/
 venv/
+
+# Python bytecode. The role ships files/audit-ssg-delegate.py as SOURCE - it is copied to
+# the target and run with `python3 <file>`, never imported - so the compiled artifact is
+# never consumed, is interpreter/version-specific, and must not ship in the role package.
+# It appears locally whenever the helper is imported for testing.
+__pycache__/
+*.py[cod]
