@@ -85,7 +85,54 @@ inline documentation is in `defaults/main.yml`; the most commonly adjusted:
 | `rhel_rke2_stig_smartcard_enabled` | `false` | CAC smart card driver (RHEL-09-611160) |
 | `rhel_rke2_stig_sssd_enabled` | `false` | SSSD certificate mapping / cached-credential expiry |
 | `rhel_rke2_stig_orphan_files_enabled` | `false` | Orphaned-file remediation (off; can break applications) |
+| `rhel_rke2_stig_aide_exclusions_enabled` | `true` | Exclude Kubernetes container logs from AIDE (see [AIDE and container logs](#aide-and-container-logs)) |
+| `rhel_rke2_stig_aide_exclusions` | `[/var/log/pods, /var/log/containers]` | Paths excluded from AIDE file integrity checks |
+| `rhel_rke2_stig_audit_immutable_pending_is_fatal` | `true` | Fail when audit rule changes cannot be applied because audit is already immutable (`-e 2`) |
 | `rhel_rke2_stig_<area>_enabled` | `true` | Per-area on/off toggles (ssh, pam, fapolicyd, postfix, file_permissions, ...) |
+
+### AIDE and container logs
+
+Stock `/etc/aide.conf` watches `/var/log` recursively. `kubelet` creates
+`/var/log/pods/` and `/var/log/containers/` when RKE2 installs — after the image is
+baked — so they are swept into that rule silently. The SSG remediation
+`aide_use_fips_hashes` then adds `sha512` to the `LOG` group, which is meant to be
+size-only, so those append-only container logs are **content hashed**. On a running
+node they change every few seconds and `aide --check` can never return `0`.
+
+A file integrity check that is permanently red is worse than none: a real intrusion
+is indistinguishable from the expected noise. This role therefore excludes the
+Kubernetes paths by default.
+
+`/var/log/audit/audit.log` has the same churn from the same cause but is
+deliberately **not** excluded — it is a base-OS concern on every RHEL host rather
+than an RKE2 gap, and excluding it would weaken a base control this role does not
+own.
+
+Changing these exclusions requires re-initializing the AIDE database
+(`aide --init && mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz`).
+Entries already in the database for now-excluded paths otherwise report as
+`REMOVED` on the next check. The role warns but does not do this: a valid baseline
+must capture the final state of a specific deployed node, which is not knowable at
+role-apply or image-bake time.
+
+### Expected SCAP failures: cron permissions
+
+An OpenSCAP run with the STIG profile reports `file_permissions_cron_d`,
+`_daily`, `_hourly`, `_weekly`, `_monthly` and `file_permissions_crontab` as
+**failed** on a compliant node. That is correct and must not be "fixed".
+
+DISA `RHEL-09-232040` (V-257888) requires that cron permissions *"not be modified
+from the operating system defaults"*. The packaged defaults are `0755` on the cron
+directories and `0644` on `/etc/crontab` (`rpm -q --dump cronie`), and this role's
+`rpm --setperms` restores exactly that.
+
+SSG's `file_permissions_cron_*` rules demand `0700`/`0600`, but in
+`scap-security-guide` 0.1.81 they carry **no `RHEL-10-nnnnnn` DISA rule ID** — their
+only DISA reference is the generic catch-all `SRG-OS-000480-GPOS-00227`, alongside
+CIS and NIST refs — and the RHEL 10 datastream contains no STIG-ID-mapped cron
+permission control at all. SSG is applying CIS-derived hardening stricter than any
+specific DISA cron requirement, and on RHEL 9 it directly contradicts the authored
+control. The STIG is the compliance authority; the scanner profile is not.
 
 ## RHEL 10 STIG Support
 

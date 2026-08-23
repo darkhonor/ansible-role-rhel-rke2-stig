@@ -350,6 +350,34 @@
 # Severity: CAT II
 # Note: Uses rpm --setperms and --setugids to restore factory permissions
 #   for cronie and crontabs packages.
+#
+# EXPECT SCAP "FAILURES" HERE - THEY ARE CORRECT. DO NOT "FIX" THEM.
+#
+# An OpenSCAP run with the STIG profile reports these as failed on a compliant
+# node, which looks like this task is not working:
+#   file_permissions_cron_d / _daily / _hourly / _weekly / _monthly
+#   file_permissions_crontab
+#
+# It is working. The two authorities genuinely disagree:
+#   - DISA RHEL-09-232040 (V-257888), the control THIS task implements, requires
+#     that cron permissions "not be modified from the operating system defaults".
+#     The packaged defaults are 0755 on the cron directories and 0644 on
+#     /etc/crontab (verify: rpm -q --dump cronie | awk '{print $1, $5}').
+#     `rpm --setperms` restores exactly that, which is the required state.
+#   - SSG's file_permissions_cron_* rules demand 0700 / 0600. In the RHEL 10
+#     datastream (scap-security-guide 0.1.81) those rules carry NO RHEL-10-nnnnnn
+#     DISA rule ID - their only DISA reference is the generic catch-all
+#     SRG-OS-000480-GPOS-00227, alongside CIS and NIST CM-6(a)/AC-6(1) refs. There
+#     is no STIG-ID-mapped cron permission control in the RHEL 10 STIG at all.
+#
+# So SSG applies CIS-derived hardening that is STRICTER than any specific DISA
+# cron requirement, and on RHEL 9 it directly contradicts RHEL-09-232040.
+# Tightening these to 0700/0600 would satisfy the scanner and BREAK the authored
+# STIG control. The STIG is the compliance authority; the scanner profile is not.
+#
+# If a future DISA RHEL 10 STIG adds an explicit cron permission control, this
+# task needs to become OS-conditional (vars/rhel9.yml vs vars/rhel10.yml) rather
+# than simply retargeted - the RHEL 9 requirement does not change.
 ###########################################################
 - name: RHEL-09-232040 | Check if cronie package is installed
   ansible.builtin.command:
@@ -1162,4 +1190,80 @@
     - rke2
     - sysctl
     - RHEL-10-800250
+    - CAT II
+
+###########################################################
+# AIDE file integrity: exclude Kubernetes container logs.
+# STIG IDs: RHEL-09-651010 / RHEL-10-671010 (AIDE must be installed and used)
+#   are satisfied by the base profile; this fills the RKE2-specific gap.
+# Severity: CAT II
+#
+# Stock /etc/aide.conf watches /var/log recursively (the `/var/log LOG` rule).
+# kubelet creates /var/log/pods/ and /var/log/containers/ at RKE2 install, i.e.
+# AFTER the image is baked, so they are swept into that rule silently. The SSG
+# remediation aide_use_fips_hashes then puts sha512 into the LOG group, which is
+# supposed to be size-only, so those append-only container logs are CONTENT
+# HASHED. On a running node they change every few seconds and `aide --check` can
+# never return 0 - integrity monitoring is permanently red and therefore useless,
+# which is worse than not running it: a real intrusion is indistinguishable from
+# the expected noise.
+#
+# Scoped deliberately to the Kubernetes paths only. /var/log/audit/audit.log has
+# the same churn problem from the same cause, but it is a BASE-OS concern on every
+# RHEL host, not an RKE2 gap, and excluding it would weaken a base control this
+# role does not own. It is left in place; see README.
+#
+# NOTE: changing aide.conf REQUIRES re-initializing the AIDE database. Entries
+# already in the database for now-excluded paths have no filesystem counterpart on
+# the next scan and are reported as REMOVED. Re-baselining is a deploy-time action
+# (it must capture the final state of a specific node), so this role warns rather
+# than running `aide --init` itself.
+###########################################################
+- name: AIDE | Check whether aide is installed
+  ansible.builtin.stat:
+    path: "{{ rhel_rke2_stig_aide_conf_path }}"
+  register: rhel_rke2_stig_aide_conf
+  when: rhel_rke2_stig_aide_exclusions_enabled | bool
+  tags:
+    - rke2
+    - aide
+    - CAT II
+
+- name: AIDE | Exclude Kubernetes container log paths from file integrity checks
+  ansible.builtin.blockinfile:
+    path: "{{ rhel_rke2_stig_aide_conf_path }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - rhel_rke2_stig kubernetes log exclusions"
+    block: |
+      {% for path in rhel_rke2_stig_aide_exclusions %}
+      !{{ path }}
+      {% endfor %}
+    insertafter: EOF
+    owner: root
+    group: root
+    mode: "0600"
+  register: rhel_rke2_stig_aide_block
+  when:
+    - rhel_rke2_stig_aide_exclusions_enabled | bool
+    - rhel_rke2_stig_aide_conf.stat.exists | default(false)
+  tags:
+    - rke2
+    - aide
+    - CAT II
+
+- name: AIDE | Warn that the AIDE database must be re-initialized
+  ansible.builtin.debug:
+    msg: >-
+      AIDE exclusions changed in {{ rhel_rke2_stig_aide_conf_path }}. The AIDE
+      DATABASE IS NOW STALE: entries for the newly excluded paths remain in it and
+      will be reported as REMOVED on the next check until the baseline is rebuilt.
+      Re-initialize at deploy time, after provisioning is complete, with:
+      `aide --init && mv -f /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz`.
+      This role does not do it: a valid baseline must capture the final state of a
+      specific node, which is not knowable at role-apply or image-bake time.
+  when:
+    - rhel_rke2_stig_aide_exclusions_enabled | bool
+    - rhel_rke2_stig_aide_block.changed | default(false)
+  tags:
+    - rke2
+    - aide
     - CAT II
