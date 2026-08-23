@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-23
+
 ### Added
 
 - Audit rule load verification. `augenrules --load` returns 0 even when it applies
@@ -18,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ending in `-e 2` actually reached `enabled 2` — a single high-signal check that
   the load ran to completion. (#67)
 - AIDE exclusions for Kubernetes container logs (`/var/log/pods`,
-  `/var/log/containers`) via `rhel_rke2_stig_aide_exclusions`. Stock `aide.conf`
+  `/var/log/containers`) via `rhel_rke2_stig_aide_exclusions`, with
+  `rhel_rke2_stig_aide_exclusions_enabled` (default `true`) and
+  `rhel_rke2_stig_aide_conf_path` (default `/etc/aide.conf`). Stock `aide.conf`
   watches `/var/log` recursively, kubelet creates those paths after image bake, and
   `aide_use_fips_hashes` puts `sha512` into the size-only `LOG` group — so
   append-only container logs are content-hashed and `aide --check` can never return
@@ -35,6 +39,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependabot `codeql-action` version-lockstep group, so the `github/codeql-action`
   sub-actions are always proposed as one PR at a single SHA instead of drifting
   apart into a broken analysis.
+- `actionlint` enforced in the Lint job, so workflow syntax errors fail CI instead
+  of surfacing only at run time. (#46)
+- Community health files (Code of Conduct, Contributing, Security policy), issue
+  and pull request templates, and CodeQL code scanning. (#42)
+
+### Changed
+
+- Molecule verify now derives the expected audit rule count from the dataset instead
+  of asserting a hardcoded `>= 50` floor. The template emits one `STIG-ID:` comment
+  per entry in `rhel_rke2_stig_audit_rules`, so the check asserts an exact match —
+  which also catches a truncated or partially rendered template, something a floor
+  cannot. The magic number had broken when four duplicate rules were correctly
+  removed, and would have broken again on any legitimate dataset change. (#69)
+- Documented, without changing behaviour, why an OpenSCAP STIG-profile scan reports
+  `file_permissions_cron_d`/`_daily`/`_hourly`/`_weekly`/`_monthly` and
+  `file_permissions_crontab` as failed on a **compliant** node. DISA
+  `RHEL-09-232040` requires cron permissions "not be modified from the operating
+  system defaults" — 0755 directories and 0644 `/etc/crontab`, which
+  `rpm --setperms` restores. SSG's `file_permissions_cron_*` rules demand
+  0700/0600 but carry no `RHEL-10-nnnnnn` DISA rule ID, only the generic
+  `SRG-OS-000480-GPOS-00227` plus CIS/NIST references, and the RHEL 10 datastream
+  contains no STIG-ID-mapped cron permission control at all. Tightening these would
+  satisfy the scanner and violate the STIG. Recorded in `tasks/main.yml` and the
+  README so the divergence is not "fixed" by a future reader. (#68)
 
 ### Removed
 
@@ -105,6 +133,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump actions/checkout from 7.0.0 to 7.0.1 (#52)
 - Bump actions/setup-python from 6.3.0 to 7.0.0 (#54)
 - Bump cryptography from 48.0.1 to 50.0.0 (#55)
+- Bump pre-commit from 4.6.1 to 4.6.2 (#59)
+- Bump ansible-core from 2.21.2 to 2.21.3 (#60)
+- Bump ansible-lint from 26.6.0 to 26.8.0 (#62)
+- Bump reviewdog/action-actionlint from 1.72.0 to 1.73.1 (#57)
 - Bump github/codeql-action from 4.37.0 to 4.37.6 (`init`, `analyze`,
   `upload-sarif` in lockstep)
 
@@ -184,7 +216,8 @@ since v0.3.0.
 - Initial RHEL 9 / RKE2 STIG remediation role: baseline controls, Molecule +
   Podman CI, pre-commit hooks, and pinned Python requirements.
 
-[Unreleased]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.2.0...v0.3.0
