@@ -905,14 +905,103 @@
 #   This template covers 50 individual STIG audit requirements.
 # Severity: CAT II
 ###########################################################
-- name: RHEL-09-654xxx | Deploy STIG audit rules
+- name: RHEL-09-654xxx | Ensure the role helper directory exists
+  ansible.builtin.file:
+    path: /opt/rke2-stig
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  tags:
+    - RHEL-09-654010
+    - audit
+    - CAT II
+
+# Rendered to a CANDIDATE, not straight to rules.d. The delegation step below is what
+# writes the live file, and it only does so when the result actually differs. Rendering
+# directly to the live path would wipe the delegation markers on every run, report
+# changed, notify the reload handler, and on a node that has since reached `-e 2` that
+# is a permanent failure - the play would never converge.
+# Deliberately does NOT notify: a changed candidate does not mean a changed ruleset.
+- name: RHEL-09-654xxx | Render the STIG audit rules candidate
   ansible.builtin.template:
     src: 20-stig.rules.j2
-    dest: /etc/audit/rules.d/20-stig.rules
+    dest: /opt/rke2-stig/20-stig.rules.candidate
+    owner: root
+    group: root
+    mode: '0600'
+  tags:
+    - RHEL-09-654010
+    - audit
+    - CAT II
+
+###########################################################
+# Delegate rules the SSG/SCAP base profile already provides.
+#
+# augenrules performs NO deduplication - it emits every rule verbatim - so a rule this
+# role writes that the base profile has ALREADY written to another rules.d file is
+# rejected by the kernel with "Rule exists", and augenrules ABORTS THE WHOLE LOAD at
+# that line, dropping every later rule AND the trailing `-e 2`. Observed on a live
+# cluster: 8 of 205 rules loaded, audit left MUTABLE, play reported success.
+#
+# Decided at APPLY TIME rather than by deleting rules from the dataset, because which
+# rules the base profile provides varies by SSG version, profile and OS major. A static
+# removal list bakes in an assumption that goes stale - and did: an earlier attempt
+# removed four rules from a measurement that had missed four more.
+#
+# On a host WITHOUT the base profile nothing matches, nothing is commented, and the
+# role still fills the gap exactly as documented. Verified as a no-op in that case.
+#
+# Runs via `python3 <file>` rather than ansible.builtin.script: the STIG partitioning
+# mounts noexec and fapolicyd whitelists binaries, so a transferred executable is
+# unreliable. An interpreter READING a data file is subject to neither.
+###########################################################
+- name: RHEL-09-654xxx | Stage the base-profile delegation helper
+  ansible.builtin.copy:
+    src: audit-ssg-delegate.py
+    dest: /opt/rke2-stig/audit-ssg-delegate.py
     owner: root
     group: root
     mode: '0640'
+  tags:
+    - RHEL-09-654010
+    - audit
+    - CAT II
+
+- name: RHEL-09-654xxx | Delegate audit rules already provided by the base STIG profile
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/python3
+      - /opt/rke2-stig/audit-ssg-delegate.py
+      - --from
+      - /opt/rke2-stig/20-stig.rules.candidate
+      - --target
+      - /etc/audit/rules.d/20-stig.rules
+      - --rules-dir
+      - /etc/audit/rules.d
+      - --owned
+      - 10-rke2-server.rules,20-stig.rules
+  register: rhel_rke2_stig_audit_delegate
+  changed_when: (rhel_rke2_stig_audit_delegate.stdout | from_json).changed | bool
   notify: Reload auditd rules
+  tags:
+    - RHEL-09-654010
+    - audit
+    - CAT II
+
+# Surfaced, not silent. Suppressing an audit rule is a coverage decision, so the exact
+# list and the file:line each rule defers to must be reviewable in the play output.
+- name: RHEL-09-654xxx | Report which audit rules were delegated to the base profile
+  ansible.builtin.debug:
+    msg: >-
+      Delegated {{ (rhel_rke2_stig_audit_delegate.stdout | from_json).delegated_count }}
+      rule(s) to the base STIG profile
+      ({{ (rhel_rke2_stig_audit_delegate.stdout | from_json).base_rules_seen }} base rules
+      seen); restored
+      {{ (rhel_rke2_stig_audit_delegate.stdout | from_json).restored_count }}.
+      {{ (rhel_rke2_stig_audit_delegate.stdout | from_json).delegated
+         | map(attribute='provided_by') | list | sort | join(', ') }}
+  when: rhel_rke2_stig_audit_delegate.stdout is defined
   tags:
     - RHEL-09-654010
     - audit
