@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Audit compliance did not survive a reboot.** A node hardened to 202 of 207 rules with
+  `enabled 2` came back from any restart with ~20 rules and audit **MUTABLE**, silently,
+  and stayed that way until the role ran again - both states reporting success. `/run` is
+  tmpfs, so `/run/k3s/containerd/containerd.sock` does not exist until RKE2 starts, and
+  `audit-rules.service` runs at boot **before** rke2-server/rke2-agent. The watch failed
+  with `No such file or directory` and `augenrules` aborted the load at that line, dropping
+  every later rule and the trailing `-e 2`. The handler's tolerance for that error - correct
+  for build-time pre-staging - is what kept it quiet, and the immutability check from #67
+  could not catch it because the node never reaches `-e 2` at boot to have a pending change
+  detected. The watch is removed; verified across real reboots of both an agent and the
+  control plane, each returning `201/206` rules with `enabled 2`. Other watches on paths
+  absent at boot (the server-only paths on an agent) do not abort the load, so no post-RKE2
+  reload unit is needed. (#74)
+
 - The audit rule load still aborted after v0.4.0. That release removed four rules the
   SSG/SCAP base profile already provides, based on a measurement that had **missed four
   more** because the comparison did not normalise `-F` field ordering. On a live cluster
