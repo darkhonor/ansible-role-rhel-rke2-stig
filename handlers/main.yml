@@ -47,6 +47,23 @@
   when: auditd_active.rc == 0
   listen: Reload auditd rules
 
+# audit-rules.service loads /etc/audit/rules.d at BOOT. On a node whose baked ruleset was
+# broken, that unit is already `failed` by the time this role runs - and a successful
+# augenrules reload here does NOT clear it, because systemd keeps the failed state until it
+# is explicitly reset. Leaving it means `systemctl --failed` still accuses a node the role
+# just fixed, which destroys that list as a drift signal (the same trap as masking a unit
+# that has already failed). Only reset when the reload actually succeeded.
+- name: Clear the stale boot-time audit-rules failure after a successful reload
+  ansible.builtin.command:
+    cmd: systemctl reset-failed audit-rules.service
+  changed_when: false
+  failed_when: false
+  when:
+    - auditd_active.rc == 0
+    - augenrules_load is defined
+    - not (augenrules_load.failed | default(false))
+  listen: Reload auditd rules
+
 # This handler only runs when something notified it, i.e. a rules file CHANGED this
 # run. If the audit system was already immutable, that pending change was silently
 # discarded by augenrules and will not exist in the kernel until a reboot re-reads

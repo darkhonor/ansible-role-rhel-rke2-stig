@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-08-23
+
+### Fixed
+
+- **Audit compliance did not survive a reboot.** A node hardened to 202 of 207 rules with
+  `enabled 2` came back from any restart with ~20 rules and audit **MUTABLE**, silently,
+  and stayed that way until the role ran again - both states reporting success. `/run` is
+  tmpfs, so `/run/k3s/containerd/containerd.sock` does not exist until RKE2 starts, and
+  `audit-rules.service` runs at boot **before** rke2-server/rke2-agent. The watch failed
+  with `No such file or directory` and `augenrules` aborted the load at that line, dropping
+  every later rule and the trailing `-e 2`. The handler's tolerance for that error - correct
+  for build-time pre-staging - is what kept it quiet, and the immutability check from #67
+  could not catch it because the node never reaches `-e 2` at boot to have a pending change
+  detected. The watch is removed; verified across real reboots of both an agent and the
+  control plane, each returning `201/206` rules with `enabled 2`. Other watches on paths
+  absent at boot (the server-only paths on an agent) do not abort the load, so no post-RKE2
+  reload unit is needed. (#74)
+
+- The audit rule load still aborted after v0.4.0. That release removed four rules the
+  SSG/SCAP base profile already provides, based on a measurement that had **missed four
+  more** because the comparison did not normalise `-F` field ordering. On a live cluster
+  v0.4.0 reached **129 of 205 rules with audit still MUTABLE** - a convincing-looking
+  improvement over v0.3.2's 8, and still broken. There were 8 collisions, not 4:
+  `chmod`, `chown` and `xattr` against `perm_mod.rules`, plus `delete`, `export` and
+  `logins` against their own base files. (#66)
+- Replaced that static removal with a **runtime delegation** step, and restored the four
+  rules v0.4.0 deleted so the dataset is complete again and every STIG ID stays traceable.
+  At apply time the role compares its rendered ruleset against the other files in
+  `rules.d` and comments out only exact matches, recording the `file:line` each rule
+  defers to. Normalisation handles all three equivalent encodings: `-S a,b` vs
+  `-S a -S b`, `-k KEY` vs `-F key=KEY`, and `-F` field order.
+  On a host **without** the base profile nothing matches, nothing is commented, and the
+  role fills the gap exactly as documented - verified as a no-op in that case. A rule the
+  base profile later stops providing is automatically restored rather than staying
+  suppressed. Measured on a live cluster: **12 rules delegated, 202 of 207 loaded,
+  `auditctl -s` reporting `enabled 2`**.
+- `audit-rules.service` kept its boot-time `failed` state even after the role successfully
+  reloaded the ruleset, because systemd holds a failed unit until it is explicitly reset.
+  The unit is now reset **only when the reload actually succeeded**, so `systemctl --failed`
+  stops accusing a node the role just fixed.
+
+### Changed
+
+- The audit rules template now renders to a candidate under `/opt/rke2-stig/` and the
+  delegation step writes `/etc/audit/rules.d/20-stig.rules`, replacing it only when the
+  result differs. Rendering straight to the live path wiped the delegation markers on
+  every run, reported changed, notified the reload handler, and on a node that had since
+  reached `-e 2` that was a **permanent failure** - the play never converged. Verified
+  idempotent both in Molecule and against a live cluster.
+
 ## [0.4.0] - 2026-08-23
 
 ### Added
@@ -216,7 +266,8 @@ since v0.3.0.
 - Initial RHEL 9 / RKE2 STIG remediation role: baseline controls, Molecule +
   Podman CI, pre-commit hooks, and pinned Python requirements.
 
-[Unreleased]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/mpe-es/ansible-role-rhel-rke2-stig/compare/v0.3.0...v0.3.1
