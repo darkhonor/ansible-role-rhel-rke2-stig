@@ -1356,3 +1356,111 @@
     - rke2
     - aide
     - CAT II
+
+###########################################################
+# STIG ID: CNTR-R2-000520    Group ID: V-254564    (RKE2 STIG V2R7)
+# Rule Title: Configuration and authentication files for Rancher RKE2 must be
+#   protected. Check item 3 requires "at least 0640" on the agent kubeconfigs
+#   - a FLOOR, so stricter modes also comply. CIS Kubernetes Benchmark 4.1.3
+#   (kube-proxy kubeconfig) and 4.1.5 (kubelet kubeconfig) require 0600 or
+#   more restrictive; rhel_rke2_stig_kubeconfig_cis_strict=true opts in to
+#   the CIS 0600, false (default) applies the STIG floor of 0640. Both
+#   satisfy the STIG. Files absent at apply time are skipped and reported,
+#   never created.
+# Severity: CAT II
+###########################################################
+- name: CNTR-R2-000520 | Stat the RKE2 agent kubeconfigs
+  ansible.builtin.stat:
+    path: "{{ rhel_rke2_stig_rancher_base_path }}/rke2/agent/{{ item }}"
+    follow: false
+    get_checksum: false
+    get_attributes: false
+    get_mime: false
+  loop: "{{ rhel_rke2_stig_kubeconfig_files }}"
+  register: rhel_rke2_stig_kubeconfig_before
+  tags:
+    - rke2
+    - permissions
+    - kubeconfig
+    - CNTR-R2-000520
+    - CIS-4.1.3
+    - CIS-4.1.5
+    - CAT II
+
+- name: CNTR-R2-000520 | Apply the required mode to the RKE2 agent kubeconfigs
+  ansible.builtin.file:
+    path: "{{ rhel_rke2_stig_rancher_base_path }}/rke2/agent/{{ item.item }}"
+    state: file
+    follow: false
+    mode: "{{ '0600' if (rhel_rke2_stig_kubeconfig_cis_strict | bool) else '0640' }}"
+  loop: "{{ rhel_rke2_stig_kubeconfig_before.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.stat.exists
+  tags:
+    - rke2
+    - permissions
+    - kubeconfig
+    - CNTR-R2-000520
+    - CIS-4.1.3
+    - CIS-4.1.5
+    - CAT II
+
+- name: CNTR-R2-000520 | Re-stat the RKE2 agent kubeconfigs
+  ansible.builtin.stat:
+    path: "{{ rhel_rke2_stig_rancher_base_path }}/rke2/agent/{{ item.item }}"
+    follow: false
+    get_checksum: false
+    get_attributes: false
+    get_mime: false
+  loop: "{{ rhel_rke2_stig_kubeconfig_before.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when:
+    - item.stat.exists
+    - not ansible_check_mode
+  register: rhel_rke2_stig_kubeconfig_after
+  tags:
+    - rke2
+    - permissions
+    - kubeconfig
+    - CNTR-R2-000520
+    - CIS-4.1.3
+    - CIS-4.1.5
+    - CAT II
+
+- name: CNTR-R2-000520 | Verify the applied mode on disk
+  ansible.builtin.assert:
+    that:
+      - item.stat.mode == (('0600' if (rhel_rke2_stig_kubeconfig_cis_strict | bool) else '0640'))
+    fail_msg: >-
+      {{ item.item.item }} is {{ item.stat.mode }} on disk, not the requested mode.
+  loop: "{{ rhel_rke2_stig_kubeconfig_after.results }}"
+  loop_control:
+    label: "{{ item.item.item }}"
+  when: not (item.skipped | default(false))
+  tags:
+    - rke2
+    - permissions
+    - kubeconfig
+    - CNTR-R2-000520
+    - CIS-4.1.3
+    - CIS-4.1.5
+    - CAT II
+
+- name: CNTR-R2-000520 | Report kubeconfigs absent at apply time
+  ansible.builtin.debug:
+    msg: >-
+      Not present, no mode applied: {{ absent | join(', ') }}
+  vars:
+    absent: "{{ rhel_rke2_stig_kubeconfig_before.results
+                | rejectattr('stat.exists') | map(attribute='item') | list }}"
+  when: absent | length > 0
+  tags:
+    - rke2
+    - permissions
+    - kubeconfig
+    - CNTR-R2-000520
+    - CIS-4.1.3
+    - CIS-4.1.5
+    - CAT II
