@@ -289,3 +289,24 @@ rhel_rke2_stig_aide_conf_path: /etc/aide.conf
 rhel_rke2_stig_aide_exclusions:
   - /var/log/pods
   - /var/log/containers
+
+###############################################################################
+# RKE2 Agent Kubeconfig Permissions (CNTR-R2-000520 / V-254564)
+# RKE2 STIG V2R7, check item 3, requires "at least 0640" on the agent
+# kubeconfigs under /var/lib/rancher/rke2/agent - a FLOOR, so stricter modes
+# also satisfy it. CIS Kubernetes Benchmark 4.1.3 (kube-proxy kubeconfig) and
+# 4.1.5 (kubelet kubeconfig) require 0600 or more restrictive.
+#
+# Opt-in toggle: false (default) applies the STIG floor of 0640; true applies
+# the CIS 0600. Both values satisfy the STIG. The applied mode is exact -
+# whichever branch is selected is enforced as-is on the listed files. Absent
+# files are skipped and reported, never created.
+#
+# The STIG check also names rke2controller.kubeconfig, which RKE2 already
+# ships at the 0640 floor; add it to the list below to bring it under
+# management as well.
+###############################################################################
+rhel_rke2_stig_kubeconfig_cis_strict: false
+rhel_rke2_stig_kubeconfig_files:
+  - kubelet.kubeconfig
+  - kubeproxy.kubeconfig
